@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-secondary: #10b981;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f3f4f6;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background-color: white;
+  }
+  @page { margin: 0; size: A4; }
+  .no-print {
+    display: none !important;
+  }
+}

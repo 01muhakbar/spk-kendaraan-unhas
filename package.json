@@ -1,0 +1,7 @@
+{
+  "name": "spk-unhas",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx concurrently \"cd backend && npx nodemon index.js\" \"cd frontend && npm run dev\""
+  }
+}
