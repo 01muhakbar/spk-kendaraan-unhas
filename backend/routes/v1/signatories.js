@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { Signatory } = require('../../models');
+const models = require('../../models');
 
 // GET all signatories, optionally filtered by ?role=
 router.get('/', async (req, res) => {
   try {
     const whereClause = req.query.role ? { kategori_peran: req.query.role.toUpperCase() } : {};
-    const signatories = await Signatory.findAll({ where: whereClause });
+    const signatories = await models.Signatory.findAll({ where: whereClause });
     res.json(signatories);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 // POST new signatory
 router.post('/', async (req, res) => {
   try {
-    const newSignatory = await Signatory.create(req.body);
+    const newSignatory = await models.Signatory.create(req.body);
     res.status(201).json(newSignatory);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -26,9 +26,9 @@ router.post('/', async (req, res) => {
 // PUT update signatory
 router.put('/:id', async (req, res) => {
   try {
-    const [updated] = await Signatory.update(req.body, { where: { id: req.params.id } });
+    const [updated] = await models.Signatory.update(req.body, { where: { id: req.params.id } });
     if (updated) {
-      const updatedSignatory = await Signatory.findByPk(req.params.id);
+      const updatedSignatory = await models.Signatory.findByPk(req.params.id);
       return res.json(updatedSignatory);
     }
     throw new Error('Signatory not found');
@@ -40,7 +40,7 @@ router.put('/:id', async (req, res) => {
 // DELETE signatory
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await Signatory.destroy({ where: { id: req.params.id } });
+    const deleted = await models.Signatory.destroy({ where: { id: req.params.id } });
     if (deleted) {
       return res.status(204).send();
     }

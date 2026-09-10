@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { SPK, Vehicle, VendorMaster } = require('../../models');
+const models = require('../../models');
 const { Op } = require('sequelize');
 
 /**
@@ -10,7 +10,7 @@ const { Op } = require('sequelize');
 const generateSPKNumber = async () => {
   const tahun = new Date().getFullYear();
 
-  const lastSPK = await SPK.findOne({
+  const lastSPK = await models.SPK.findOne({
     where: {
       nomorSPK: {
         [Op.like]: `%/RT/P-Kend/${tahun}`
@@ -39,7 +39,7 @@ router.get('/next-number', async (req, res) => {
 // GET semua SPK
 router.get('/', async (req, res) => {
   try {
-    const data = await SPK.findAll({
+    const data = await models.SPK.findAll({
       include: [
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
 // GET satu SPK by id
 router.get('/:id', async (req, res) => {
   try {
-    const data = await SPK.findByPk(req.params.id, {
+    const data = await models.SPK.findByPk(req.params.id, {
       include: [
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
       finalNomorSPK = `${paddedUrut}/RT/P-Kend/${tahun}`;
 
       // Validasi duplikasi
-      const existing = await SPK.findOne({ where: { nomorSPK: finalNomorSPK } });
+      const existing = await models.SPK.findOne({ where: { nomorSPK: finalNomorSPK } });
       if (existing) {
         return res.status(409).json({ error: `Nomor SPK ${finalNomorSPK} sudah digunakan. Silakan gunakan angka lain.` });
       }
@@ -91,7 +91,7 @@ router.post('/', async (req, res) => {
       finalNomorUrut = generated.nomorUrut;
     }
 
-    const newSPK = await SPK.create({
+    const newSPK = await models.SPK.create({
       ...req.body,
       nomorSPK: finalNomorSPK,
       nomorUrut: finalNomorUrut
@@ -105,8 +105,8 @@ router.post('/', async (req, res) => {
 // PUT — update SPK
 router.put('/:id', async (req, res) => {
   try {
-    await SPK.update(req.body, { where: { id: req.params.id } });
-    const updated = await SPK.findByPk(req.params.id, {
+    await models.SPK.update(req.body, { where: { id: req.params.id } });
+    const updated = await models.SPK.findByPk(req.params.id, {
       include: [
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
@@ -121,7 +121,7 @@ router.put('/:id', async (req, res) => {
 // DELETE — hapus SPK
 router.delete('/:id', async (req, res) => {
   try {
-    await SPK.destroy({ where: { id: req.params.id } });
+    await models.SPK.destroy({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { SystemSetting } = require('../../models');
+const models = require('../../models');
 
 // (Local file system folder creation removed for Vercel Serverless compatibility)
 
@@ -29,7 +29,7 @@ const upload = multer({
 // GET /api/v1/settings/logo
 router.get('/logo', async (req, res) => {
   try {
-    const setting = await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
+    const setting = await models.SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
     if (!setting) {
       return res.json({ logo_url: null });
     }
@@ -49,7 +49,7 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
     const logoUrl = req.file.path; // Cloudinary returns the full URL in path
     
     // Cek apakah logo sudah ada, jika ada ambil setting lamanya
-    const existing = await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
+    const existing = await models.SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
     
     // (Opsional) Hapus file di Cloudinary jika perlu, 
     // tapi untuk sementara kita biarkan saja agar aman.
@@ -78,7 +78,7 @@ router.get('/kop', async (req, res) => {
       'KOP_KIRI_1', 'KOP_KIRI_2', 'KOP_KIRI_3', 'KOP_KIRI_4',
       'KOP_KANAN_1', 'KOP_KANAN_2', 'KOP_KANAN_3', 'KOP_KANAN_4', 'KOP_KANAN_5'
     ];
-    const settings = await SystemSetting.findAll({
+    const settings = await models.SystemSetting.findAll({
       where: { setting_key: keys }
     });
     
@@ -117,11 +117,11 @@ router.post('/kop', async (req, res) => {
     
     for (const key of keys) {
       if (req.body[key] !== undefined) {
-        const existing = await SystemSetting.findOne({ where: { setting_key: key } });
+        const existing = await models.SystemSetting.findOne({ where: { setting_key: key } });
         if (existing) {
           await existing.update({ setting_value: req.body[key] });
         } else {
-          await SystemSetting.create({
+          await models.SystemSetting.create({
             setting_key: key,
             setting_value: req.body[key]
           });
