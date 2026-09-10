@@ -27,13 +27,18 @@ app.use('/api/v1/settings', settingsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async (err) => {
-  if (err) {
-    console.error(`Gagal memulai server di port ${PORT}:`, err.message);
-    process.exit(1);
-  }
-  console.log(`Server is running on port ${PORT}`);
-  // In development, we can automatically sync database (with force:false or true)
-  // Warning: doing sync() in production can be dangerous
-  // await syncDatabase(); // Dipanggil lewat seed.js saja
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, async (err) => {
+    if (err) {
+      console.error(`Gagal memulai server di port ${PORT}:`, err.message);
+      process.exit(1);
+    }
+    console.log(`Server is running on port ${PORT}`);
+    // In development, we can automatically sync database (with force:false or true)
+    // Warning: doing sync() in production can be dangerous
+    // await syncDatabase(); // Dipanggil lewat seed.js saja
+  });
+}
+
+// Export the Express API for Vercel Serverless
+module.exports = app;
