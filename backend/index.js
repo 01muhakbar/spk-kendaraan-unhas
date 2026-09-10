@@ -25,6 +25,21 @@ app.use('/api/v1/vendors', vendorRoutes);
 app.use('/api/v1/spk', spkRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 
+app.get('/api/v1/debug', (req, res) => {
+  try {
+    const models = require('./models');
+    res.json({
+      keys: Object.keys(models),
+      env: {
+        DB_HOST: !!process.env.DB_HOST,
+        DB_DIALECT: process.env.DB_DIALECT,
+        CLOUDINARY: !!process.env.CLOUDINARY_URL
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== 'production') {
