@@ -6,7 +6,8 @@ import CreateSPK from './pages/CreateSPK';
 import PrintSPK from './pages/PrintSPK';
 import EditSPK from './pages/EditSPK';
 
-const API = 'http://localhost:5000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 function App() {
   const [logoUrl, setLogoUrl] = useState(null);
@@ -22,7 +23,7 @@ function App() {
         ]);
 
         if (logoRes.data.logo_url) {
-          const fullLogoUrl = `http://localhost:5000${logoRes.data.logo_url}`;
+          const fullLogoUrl = `${API_BASE}${logoRes.data.logo_url}`;
           setLogoUrl(fullLogoUrl);
           
           // Inject favicon
