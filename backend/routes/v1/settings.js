@@ -5,32 +5,25 @@ const path = require('path');
 const fs = require('fs');
 const { SystemSetting } = require('../../models');
 
-// Pastikan folder upload ada
-const uploadDir = path.join(__dirname, '../../public/uploads/logos');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// (Local file system folder creation removed for Vercel Serverless compatibility)
 
-// Konfigurasi Multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
+
+// Konfigurasi Cloudinary akan otomatis membaca CLOUDINARY_URL dari environment
+// format CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'spk_unhas', // Folder di dalam Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif']
   },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    cb(null, 'logo-' + Date.now() + ext);
-  }
 });
+
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Hanya file gambar yang diizinkan'));
-    }
-  }
 });
 
 // GET /api/v1/settings/logo
@@ -53,18 +46,13 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada file gambar yang diunggah' });
     }
 
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    const logoUrl = req.file.path; // Cloudinary returns the full URL in path
     
     // Cek apakah logo sudah ada, jika ada ambil setting lamanya
     const existing = await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
     
-    // Hapus file fisik logo lama jika ada
-    if (existing && existing.setting_value) {
-      const oldPath = path.join(__dirname, '../../public', existing.setting_value);
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
-    }
+    // (Opsional) Hapus file di Cloudinary jika perlu, 
+    // tapi untuk sementara kita biarkan saja agar aman.
 
     // Upsert
     if (existing) {
