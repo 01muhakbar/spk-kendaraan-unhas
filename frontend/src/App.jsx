@@ -6,7 +6,7 @@ import CreateSPK from './pages/CreateSPK';
 import PrintSPK from './pages/PrintSPK';
 import EditSPK from './pages/EditSPK';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 function App() {
@@ -23,7 +23,9 @@ function App() {
         ]);
 
         if (logoRes.data.logo_url) {
-          const fullLogoUrl = `${API_BASE}${logoRes.data.logo_url}`;
+          const fullLogoUrl = logoRes.data.logo_url.startsWith('http') 
+            ? logoRes.data.logo_url 
+            : `${API_BASE}${logoRes.data.logo_url}`;
           setLogoUrl(fullLogoUrl);
           
           // Inject favicon

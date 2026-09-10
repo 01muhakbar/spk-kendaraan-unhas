@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 // Komponen untuk satu baris tabel pengecekan (Lembar 3)

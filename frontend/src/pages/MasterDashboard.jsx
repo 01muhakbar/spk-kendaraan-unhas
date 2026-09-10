@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API = 'http://localhost:5000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 const MasterDashboard = () => {
   const [activeTab, setActiveTab] = useState('spk');
@@ -67,7 +68,10 @@ const MasterDashboard = () => {
       } else if (tab === 'settings') {
         const resLogo = await axios.get(`${API}/settings/logo`);
         if (resLogo.data.logo_url) {
-          setLogoPreview(`http://localhost:5000${resLogo.data.logo_url}`);
+          const url = resLogo.data.logo_url.startsWith('http') 
+            ? resLogo.data.logo_url 
+            : `${API_BASE}${resLogo.data.logo_url}`;
+          setLogoPreview(url);
         }
         const resKop = await axios.get(`${API}/settings/kop`);
         setKopSettings(resKop.data);

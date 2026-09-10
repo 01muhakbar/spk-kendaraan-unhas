@@ -13,6 +13,7 @@ build/
 backend/.env
 frontend/.env
 .env.local
+vercel.env
 
 # Uploads / Data (File logo dan upload lainnya)
 backend/public/uploads/

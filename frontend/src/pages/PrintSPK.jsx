@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-const API = 'http://localhost:5000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 // ─── Utilitas Tanggal ───
 const HARI_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -120,7 +121,10 @@ const PrintSPK = () => {
         setSpk(resSPK.data);
         setPejabat(resSDM.data);
         if (resLogo.data.logo_url) {
-          setLogoUrl(`http://localhost:5000${resLogo.data.logo_url}`);
+          const url = resLogo.data.logo_url.startsWith('http')
+            ? resLogo.data.logo_url
+            : `${API_BASE}${resLogo.data.logo_url}`;
+          setLogoUrl(url);
         }
         setKopSettings(resKop.data);
       } catch (err) {
