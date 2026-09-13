@@ -57,7 +57,7 @@ function App() {
             </div>
             <div className="space-x-4 flex items-center">
               <Link to="/" className="hover:text-blue-200 transition-colors hidden sm:inline">Master Dashboard</Link>
-              <Link to="/create-spk" className="bg-white text-blue-800 px-4 py-2 rounded-md font-bold hover:bg-gray-100 transition-colors shadow-sm text-sm sm:text-base">
+              <Link to="/create-spk" className="bg-white text-blue-800 px-4 py-2 rounded-md font-bold hover:bg-gray-100 transition-colors shadow-sm hidden sm:inline-block text-sm sm:text-base">
                 + Buat SPK
               </Link>
             </div>

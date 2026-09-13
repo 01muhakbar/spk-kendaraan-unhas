@@ -343,7 +343,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   return (
     <div className="max-w-6xl mx-auto py-8">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Administrator Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Kelola data master dan riwayat SPK secara terpusat.</p>
@@ -354,7 +354,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-t-lg shadow-sm border-b border-gray-200 flex overflow-x-auto">
+      <div className="bg-white rounded-t-lg shadow-sm border-b border-gray-200 flex overflow-x-auto [&::-webkit-scrollbar]:hidden">
         <button onClick={() => setActiveTab('spk')} className={tabClass('spk')}>Riwayat SPK</button>
         <button onClick={() => setActiveTab('vehicles')} className={tabClass('vehicles')}>Master Kendaraan</button>
         <button onClick={() => setActiveTab('signatories')} className={tabClass('signatories')}>Master Pejabat & Teknisi</button>
@@ -415,7 +415,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       <thead className="bg-gray-50 text-gray-700 border-b">
                         <tr>
                           <th className="p-3 whitespace-nowrap">No. SPK</th>
-                          <th className="p-3 whitespace-nowrap">Tanggal Laporan</th>
+                          <th className="p-3 whitespace-nowrap hidden md:table-cell">Tanggal Laporan</th>
                           <th className="p-3 whitespace-nowrap">No. Polisi</th>
                           <th className="p-3 whitespace-nowrap">Bengkel Tujuan</th>
                           <th className="p-3 text-center whitespace-nowrap">Status</th>
@@ -427,7 +427,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         {filteredSpks.map(spk => (
                           <tr key={spk.id} className="border-b hover:bg-gray-50">
                             <td className="p-3 font-semibold">{spk.nomorSPK}</td>
-                            <td className="p-3">{spk.tanggalLaporan}</td>
+                            <td className="p-3 hidden md:table-cell">{spk.tanggalLaporan}</td>
                             <td className="p-3">{spk.vehicle?.nomor_polisi}</td>
                             <td className="p-3">{spk.vendor?.nama_bengkel}</td>
                             <td className="p-3 text-center">
@@ -474,7 +474,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       <tr>
                         <th className="p-3 whitespace-nowrap">No. Polisi</th>
                         <th className="p-3 whitespace-nowrap">Merek / Type</th>
-                        <th className="p-3 whitespace-nowrap">Jenis Kendaraan</th>
+                        <th className="p-3 whitespace-nowrap hidden md:table-cell">Jenis Kendaraan</th>
                         <th className="p-3 whitespace-nowrap">Pengguna / Sopir</th>
                         <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
@@ -484,7 +484,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         <tr key={v.id} className="border-b hover:bg-gray-50">
                           <td className="p-3 font-bold">{v.nomor_polisi}</td>
                           <td className="p-3">{v.merek_type}</td>
-                          <td className="p-3">{v.jenis_kendaraan}</td>
+                          <td className="p-3 hidden md:table-cell">{v.jenis_kendaraan}</td>
                           <td className="p-3">{v.nama_sopir}</td>
                           <td className="p-3 text-center space-x-4">
                             <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors" title="Edit">✏️</button>
@@ -510,7 +510,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         <th className="p-3 whitespace-nowrap">Nama Lengkap</th>
-                        <th className="p-3 whitespace-nowrap">NIP / NIK</th>
+                        <th className="p-3 whitespace-nowrap hidden md:table-cell">NIP / NIK</th>
                         <th className="p-3 whitespace-nowrap">Jabatan Cetak</th>
                         <th className="p-3 whitespace-nowrap">Kategori (Role)</th>
                         <th className="p-3 text-center whitespace-nowrap">Aksi</th>
@@ -520,7 +520,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       {signatories.map(s => (
                         <tr key={s.id} className="border-b hover:bg-gray-50">
                           <td className="p-3 font-bold">{s.nama_lengkap}</td>
-                          <td className="p-3">{s.nip_nik}</td>
+                          <td className="p-3 hidden md:table-cell">{s.nip_nik}</td>
                           <td className="p-3">{s.jabatan}</td>
                           <td className="p-3"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs">{s.kategori_peran}</span></td>
                           <td className="p-3 text-center space-x-4">
