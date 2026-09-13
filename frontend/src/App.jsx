@@ -46,18 +46,18 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col bg-gray-100">
         <nav className="bg-blue-800 text-white p-4 shadow-md print:hidden">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
               {logoUrl && (
                 <div className="bg-white p-1 rounded-md shadow-sm flex items-center justify-center">
                   <img src={logoUrl} alt="Logo" className="h-8 w-8 object-contain" />
                 </div>
               )}
-              <Link to="/" className="text-xl font-bold tracking-wide">{appTitle}</Link>
+              <Link to="/" className="text-xl font-bold tracking-wide text-center sm:text-left">{appTitle}</Link>
             </div>
-            <div className="space-x-4">
-              <Link to="/" className="hover:text-blue-200 transition-colors">Master Dashboard</Link>
-              <Link to="/create-spk" className="bg-white text-blue-800 px-4 py-2 rounded-md font-bold hover:bg-gray-100 transition-colors shadow-sm">
+            <div className="space-x-4 flex items-center">
+              <Link to="/" className="hover:text-blue-200 transition-colors hidden sm:inline">Master Dashboard</Link>
+              <Link to="/create-spk" className="bg-white text-blue-800 px-4 py-2 rounded-md font-bold hover:bg-gray-100 transition-colors shadow-sm text-sm sm:text-base">
                 + Buat SPK
               </Link>
             </div>

@@ -318,7 +318,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
 
   // --- Helper Classes --- //
-  const tabClass = (tabId) => `px-6 py-3 font-semibold text-sm border-b-2 transition-colors duration-200 ${activeTab === tabId ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`;
+  const tabClass = (tabId) => `px-6 py-3 font-semibold text-sm border-b-2 transition-colors duration-200 whitespace-nowrap ${activeTab === tabId ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`;
   const inputClass = "w-full p-2 border border-gray-300 rounded-md mb-4 text-sm focus:ring-blue-500 focus:border-blue-500";
   const btnClass = "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition-colors";
   
@@ -343,12 +343,12 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   return (
     <div className="max-w-6xl mx-auto py-8">
       
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Administrator Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Kelola data master dan riwayat SPK secara terpusat.</p>
         </div>
-        <Link to="/create-spk" className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 transition-colors shadow">
+        <Link to="/create-spk" className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-green-700 transition-colors shadow w-full sm:w-auto text-center">
           + Buat SPK Baru
         </Link>
       </div>
@@ -414,12 +414,12 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <table className="w-full text-left text-sm text-gray-600">
                       <thead className="bg-gray-50 text-gray-700 border-b">
                         <tr>
-                          <th className="p-3">No. SPK</th>
-                          <th className="p-3">Tanggal Laporan</th>
-                          <th className="p-3">No. Polisi</th>
-                          <th className="p-3">Bengkel Tujuan</th>
-                          <th className="p-3 text-center">Status</th>
-                          <th className="p-3 text-center">Aksi</th>
+                          <th className="p-3 whitespace-nowrap">No. SPK</th>
+                          <th className="p-3 whitespace-nowrap">Tanggal Laporan</th>
+                          <th className="p-3 whitespace-nowrap">No. Polisi</th>
+                          <th className="p-3 whitespace-nowrap">Bengkel Tujuan</th>
+                          <th className="p-3 text-center whitespace-nowrap">Status</th>
+                          <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -472,11 +472,11 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                   <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="p-3">No. Polisi</th>
-                        <th className="p-3">Merek / Type</th>
-                        <th className="p-3">Jenis Kendaraan</th>
-                        <th className="p-3">Pengguna / Sopir</th>
-                        <th className="p-3 text-center">Aksi</th>
+                        <th className="p-3 whitespace-nowrap">No. Polisi</th>
+                        <th className="p-3 whitespace-nowrap">Merek / Type</th>
+                        <th className="p-3 whitespace-nowrap">Jenis Kendaraan</th>
+                        <th className="p-3 whitespace-nowrap">Pengguna / Sopir</th>
+                        <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -509,11 +509,11 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                   <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="p-3">Nama Lengkap</th>
-                        <th className="p-3">NIP / NIK</th>
-                        <th className="p-3">Jabatan Cetak</th>
-                        <th className="p-3">Kategori (Role)</th>
-                        <th className="p-3 text-center">Aksi</th>
+                        <th className="p-3 whitespace-nowrap">Nama Lengkap</th>
+                        <th className="p-3 whitespace-nowrap">NIP / NIK</th>
+                        <th className="p-3 whitespace-nowrap">Jabatan Cetak</th>
+                        <th className="p-3 whitespace-nowrap">Kategori (Role)</th>
+                        <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -546,9 +546,9 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                   <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="p-3">Nama Bengkel</th>
-                        <th className="p-3">Alamat & Kontak</th>
-                        <th className="p-3 text-center">Aksi</th>
+                        <th className="p-3 whitespace-nowrap">Nama Bengkel</th>
+                        <th className="p-3 whitespace-nowrap">Alamat & Kontak</th>
+                        <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
