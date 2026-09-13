@@ -10,12 +10,10 @@ const syncDatabase = async () => {
   await sequelize.sync();
 };
 
-module.exports = {
-  sequelize,
-  syncDatabase,
-  Vehicle,
-  Signatory,
-  VendorMaster,
-  SPK,
-  SystemSetting
-};
+module.exports.sequelize = sequelize;
+module.exports.syncDatabase = syncDatabase;
+module.exports.Vehicle = Vehicle;
+module.exports.Signatory = Signatory;
+module.exports.VendorMaster = VendorMaster;
+module.exports.SPK = SPK;
+module.exports.SystemSetting = SystemSetting;

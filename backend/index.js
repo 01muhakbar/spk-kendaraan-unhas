@@ -25,6 +25,18 @@ app.use('/api/v1/vendors', vendorRoutes);
 app.use('/api/v1/spk', spkRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 
+// Endpoint khusus untuk Sinkronisasi Database di Production
+// Membantu membuat tabel yang kurang tanpa perlu CLI
+app.get('/api/v1/force-sync', async (req, res) => {
+  try {
+    const { syncDatabase } = require('./models');
+    await syncDatabase();
+    res.json({ message: 'Database tables synchronized successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Database sync failed: ' + err.message, stack: err.stack });
+  }
+});
+
 app.get('/api/v1/debug', (req, res) => {
   try {
     const models = require('./models');

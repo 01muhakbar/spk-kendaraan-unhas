@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npx concurrently \"cd backend && npx nodemon index.js\" \"cd frontend && npm run dev\""
+  },
+  "dependencies": {
+    "mysql2": "^3.24.4"
   }
 }
