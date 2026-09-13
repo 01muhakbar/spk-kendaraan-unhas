@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const models = require('../../models');
+const { SPK, Vehicle, VendorMaster, sequelize } = require('../../models');
 const { Op } = require('sequelize');
+
+if (!SPK || !Vehicle || !VendorMaster) {
+  console.error('CRITICAL: One or more models are undefined upon import in spk.js');
+}
 
 /**
  * Generate nomor SPK dengan format: {urut}/RT/P-Kend/2026
@@ -10,7 +14,7 @@ const { Op } = require('sequelize');
 const generateSPKNumber = async () => {
   const tahun = new Date().getFullYear();
 
-  const lastSPK = await models.SPK.findOne({
+  const lastSPK = await SPK.findOne({
     where: {
       nomorSPK: {
         [Op.like]: `%/RT/P-Kend/${tahun}`
@@ -39,7 +43,7 @@ router.get('/next-number', async (req, res) => {
 // GET semua SPK
 router.get('/', async (req, res) => {
   try {
-    const data = await models.SPK.findAll({
+    const data = await SPK.findAll({
       include: [
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
@@ -55,7 +59,7 @@ router.get('/', async (req, res) => {
 // GET satu SPK by id
 router.get('/:id', async (req, res) => {
   try {
-    const data = await models.SPK.findByPk(req.params.id, {
+    const data = await SPK.findByPk(req.params.id, {
       include: [
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
@@ -81,7 +85,7 @@ router.post('/', async (req, res) => {
       finalNomorSPK = `${paddedUrut}/RT/P-Kend/${tahun}`;
 
       // Validasi duplikasi
-      const existing = await models.SPK.findOne({ where: { nomorSPK: finalNomorSPK } });
+      const existing = await SPK.findOne({ where: { nomorSPK: finalNomorSPK } });
       if (existing) {
         return res.status(409).json({ error: `Nomor SPK ${finalNomorSPK} sudah digunakan. Silakan gunakan angka lain.` });
       }
@@ -91,7 +95,7 @@ router.post('/', async (req, res) => {
       finalNomorUrut = generated.nomorUrut;
     }
 
-    const newSPK = await models.SPK.create({
+    const newSPK = await SPK.create({
       ...req.body,
       nomorSPK: finalNomorSPK,
       nomorUrut: finalNomorUrut
@@ -105,13 +109,19 @@ router.post('/', async (req, res) => {
 // PUT — update SPK
 router.put('/:id', async (req, res) => {
   try {
-    await models.SPK.update(req.body, { where: { id: req.params.id } });
-    const updated = await models.SPK.findByPk(req.params.id, {
-      include: [
-        { model: Vehicle, as: 'vehicle' },
-        { model: VendorMaster, as: 'vendor' }
-      ]
+    const updated = await sequelize.transaction(async (transaction) => {
+      const data = await SPK.findByPk(req.params.id, {
+        include: [
+          { model: Vehicle, as: 'vehicle' },
+          { model: VendorMaster, as: 'vendor' }
+        ],
+        transaction
+      });
+      if (!data) return null;
+      await data.update(req.body, { transaction });
+      return data.reload({ transaction });
     });
+    if (!updated) return res.status(404).json({ error: 'SPK tidak ditemukan' });
     res.json(updated);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -121,7 +131,7 @@ router.put('/:id', async (req, res) => {
 // DELETE — hapus SPK
 router.delete('/:id', async (req, res) => {
   try {
-    await models.SPK.destroy({ where: { id: req.params.id } });
+    await SPK.destroy({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

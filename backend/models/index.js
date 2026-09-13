@@ -1,20 +1,21 @@
 const sequelize = require('../config/database');
+const Vehicle = require('./Vehicle');
+const Signatory = require('./Signatory');
+const VendorMaster = require('./VendorMaster');
+const SPK = require('./SPK');
+const SystemSetting = require('./SystemSetting');
+
+// Register every model before schema preparation or request handling.
+const syncDatabase = async () => {
+  await sequelize.sync();
+};
 
 module.exports = {
   sequelize,
-  get syncDatabase() {
-    return async () => {
-      try {
-        await sequelize.sync({ alter: true });
-        console.log('Database synchronized (alter: true).');
-      } catch (error) {
-        console.error('Failed to sync database:', error);
-      }
-    };
-  },
-  get Vehicle() { return require('./Vehicle'); },
-  get Signatory() { return require('./Signatory'); },
-  get VendorMaster() { return require('./VendorMaster'); },
-  get SPK() { return require('./SPK'); },
-  get SystemSetting() { return require('./SystemSetting'); }
+  syncDatabase,
+  Vehicle,
+  Signatory,
+  VendorMaster,
+  SPK,
+  SystemSetting
 };

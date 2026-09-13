@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { fetchLogo, fetchKop, resolveLogoUrl } from '../settings';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -107,37 +108,45 @@ const PrintSPK = () => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [kopSettings, setKopSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [debugError, setDebugError] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchAll = async () => {
-      try {
-        const [resSPK, resSDM, resLogo, resKop] = await Promise.all([
-          axios.get(`${API}/spk/${id}`),
-          axios.get(`${API}/signatories`),
-          axios.get(`${API}/settings/logo`),
-          axios.get(`${API}/settings/kop`)
-        ]);
-        setSpk(resSPK.data);
-        setPejabat(resSDM.data);
-        if (resLogo.data.logo_url) {
-          const url = resLogo.data.logo_url.startsWith('http')
-            ? resLogo.data.logo_url
-            : `${API_BASE}${resLogo.data.logo_url}`;
-          setLogoUrl(url);
-        }
-        setKopSettings(resKop.data);
-      } catch (err) {
-        console.error('Gagal memuat data:', err);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      setLoadError('');
+      const options = { signal: controller.signal };
+      const results = await Promise.allSettled([
+        axios.get(`${API}/spk/${id}`, options),
+        axios.get(`${API}/signatories`, options),
+        fetchLogo(options),
+        fetchKop(options)
+      ]);
+      if (controller.signal.aborted) return;
+      const [spkResult, sdm, logo, kop] = results;
+      if (spkResult.status === 'fulfilled') setSpk(spkResult.value.data);
+      if (sdm.status === 'fulfilled') setPejabat(sdm.value.data);
+      if (logo.status === 'fulfilled') setLogoUrl(resolveLogoUrl(logo.value.logo_url));
+      if (kop.status === 'fulfilled') setKopSettings(kop.value);
+      const failed = [];
+      if (spkResult.status === 'rejected') failed.push('data SPK');
+      if (sdm.status === 'rejected') failed.push('data pejabat');
+      
+      if (failed.length) {
+        setLoadError(`Gagal memuat ${failed.join(', ')}. Dokumen belum siap dicetak.`);
+      } else {
+        if (logo.status === 'rejected') console.warn('Gagal memuat logo institusi, dokumen akan dicetak tanpa logo.');
+        if (kop.status === 'rejected') console.warn('Gagal memuat pengaturan kop surat, menggunakan nilai bawaan (fallback).');
       }
+      setLoading(false);
     };
     fetchAll();
-  }, [id]);
+    return () => controller.abort();
+  }, [id, retry]);
 
   useEffect(() => {
-    if (!loading && spk) {
+    if (!loading && spk && !loadError) {
       // Manipulasi judul dokumen untuk penamaan file PDF
       const originalTitle = document.title;
       const safeNomorSPK = spk.nomorSPK ? spk.nomorSPK.replace(/\//g, '-') : 'UNHAS';
@@ -146,18 +155,20 @@ const PrintSPK = () => {
 
       const queryParams = new URLSearchParams(location.search);
       // Baik autoPrint maupun autoDownload sekarang memicu print native karena limitasi html2canvas
+      let printTimer;
       if (queryParams.get('autoPrint') === 'true' || queryParams.get('autoDownload') === 'true') {
-        setTimeout(() => {
+        printTimer = setTimeout(() => {
           window.print();
         }, 800);
       }
 
       // Cleanup: mengembalikan judul dokumen semula ketika komponen dilepas (unmount)
       return () => {
+        clearTimeout(printTimer);
         document.title = originalTitle;
       };
     }
-  }, [loading, spk, location.search]);
+  }, [loading, spk, loadError, location.search]);
 
   const handleDownloadPDF = () => {
     // Karena html2pdf.js tidak mendukung oklch (Tailwind v4),
@@ -171,6 +182,12 @@ const PrintSPK = () => {
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
         <p className="text-gray-500">Memuat dokumen...</p>
       </div>
+    </div>
+  );
+  if (loadError) return (
+    <div className="p-8 text-center">
+      <p role="alert" className="text-red-700 mb-4">{loadError}</p>
+      <button type="button" onClick={() => setRetry(value => value + 1)} className="text-blue-700 underline">Muat ulang dokumen</button>
     </div>
   );
   if (!spk) return <div className="p-8 text-center text-red-500 font-semibold">Data SPK tidak ditemukan.</div>;

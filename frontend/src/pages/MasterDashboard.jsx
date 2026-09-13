@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES } from '../settings';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
-const MasterDashboard = () => {
+const MasterDashboard = ({ onSettingsSaved }) => {
   const [activeTab, setActiveTab] = useState('spk');
   
   // States for data
@@ -21,6 +22,16 @@ const MasterDashboard = () => {
   // Settings State
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
+  const [savedLogoUrl, setSavedLogoUrl] = useState(null);
+  const [kopLoaded, setKopLoaded] = useState(false);
+  const [savingLogo, setSavingLogo] = useState(false);
+  const [savingKop, setSavingKop] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const [kopError, setKopError] = useState('');
+  const logoInput = useRef(null);
+  const logoSaveLock = useRef(false);
+  const kopSaveLock = useRef(false);
+  const loadRequest = useRef(0);
   const [kopSettings, setKopSettings] = useState({
     APP_TITLE: '',
     KOP_KIRI_1: '', KOP_KIRI_2: '', KOP_KIRI_3: '', KOP_KIRI_4: '',
@@ -48,38 +59,65 @@ const MasterDashboard = () => {
 
   useEffect(() => {
     fetchData(activeTab);
+    return () => { loadRequest.current += 1; };
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview(savedLogoUrl);
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [logoFile, savedLogoUrl]);
+
   const fetchData = async (tab) => {
+    const request = ++loadRequest.current;
     setLoading(true);
+    setErrorMsg('');
+    if (tab === 'settings') setKopLoaded(false);
     try {
       if (tab === 'spk') {
         const res = await axios.get(`${API}/spk`);
+        if (request !== loadRequest.current) return;
         setSpks(res.data);
       } else if (tab === 'vehicles') {
         const res = await axios.get(`${API}/vehicles`);
+        if (request !== loadRequest.current) return;
         setVehicles(res.data);
       } else if (tab === 'signatories') {
         const res = await axios.get(`${API}/signatories`);
+        if (request !== loadRequest.current) return;
         setSignatories(res.data);
       } else if (tab === 'vendors') {
         const res = await axios.get(`${API}/vendors`);
+        if (request !== loadRequest.current) return;
         setVendors(res.data);
       } else if (tab === 'settings') {
-        const resLogo = await axios.get(`${API}/settings/logo`);
-        if (resLogo.data.logo_url) {
-          const url = resLogo.data.logo_url.startsWith('http') 
-            ? resLogo.data.logo_url 
-            : `${API_BASE}${resLogo.data.logo_url}`;
-          setLogoPreview(url);
+        const [logo, kop] = await Promise.allSettled([fetchLogo(), fetchKop()]);
+        if (request !== loadRequest.current) return;
+        
+        if (logo.status === 'fulfilled') {
+          setSavedLogoUrl(resolveLogoUrl(logo.value.logo_url));
+          setLogoError('');
+        } else {
+          setLogoError('Gagal memuat logo institusi.');
         }
-        const resKop = await axios.get(`${API}/settings/kop`);
-        setKopSettings(resKop.data);
+        
+        if (kop.status === 'fulfilled') {
+          setKopSettings(kop.value);
+          setKopLoaded(true);
+          setKopError('');
+        } else {
+          setKopError('Gagal memuat kop surat. Penyimpanan judul dan kop belum tersedia.');
+        }
       }
     } catch (err) {
       console.error('Error fetching data:', err);
+      if (request === loadRequest.current) setErrorMsg(`Gagal memuat data: ${getErrorMessage(err)}`);
     } finally {
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
   };
 
@@ -104,6 +142,7 @@ const MasterDashboard = () => {
   // Helper to extract error message
   const getErrorMessage = (err) => {
     if (!err.response) return 'Gagal terhubung ke server (Network Error). Pastikan backend aktif.';
+    if (err.response.status === 413) return 'Ukuran logo maksimal 4 MB.';
     if (err.response.status === 404) return 'Fitur atau Endpoint tidak ditemukan. Mohon restart server backend Anda untuk memuat pembaruan terbaru.';
     const dataErr = err.response?.data?.error || err.response?.data?.message;
     if (typeof dataErr === 'string') return dataErr;
@@ -213,34 +252,67 @@ const MasterDashboard = () => {
   };
 
   // Settings
+  const handleLogoSelection = (event) => {
+    const file = event.target.files[0];
+    setErrorMsg('');
+    setSuccessMsg('');
+    if (!file) {
+      setLogoFile(null);
+      return;
+    }
+    if (!LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) {
+      setErrorMsg(!LOGO_TYPES.includes(file.type) ? 'Format logo harus JPG, PNG, atau GIF.' : 'Ukuran logo maksimal 4 MB.');
+      setLogoFile(null);
+      event.target.value = '';
+      return;
+    }
+    setLogoFile(file);
+  };
+
   const handleSaveLogo = async () => {
-    if (!logoFile) return;
+    if (!logoFile || logoSaveLock.current) return;
+    logoSaveLock.current = true;
+    setSavingLogo(true);
     setErrorMsg('');
     setSuccessMsg('');
     const formData = new FormData();
     formData.append('logo', logoFile);
     try {
-      await axios.post(`${API}/settings/logo`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const { data } = await axios.post(`${API}/settings/logo`, formData);
+      setSavedLogoUrl(resolveLogoUrl(data.logo_url));
+      onSettingsSaved?.({ logo_url: data.logo_url });
       setSuccessMsg('Logo resmi berhasil diunggah dan disimpan!');
+      setLogoError('');
       setLogoFile(null);
+      if (logoInput.current) logoInput.current.value = '';
       setTimeout(() => setSuccessMsg(''), 5000); // Hilang dalam 5 detik
     } catch (err) {
-      setErrorMsg(`Gagal menyimpan logo: ${getErrorMessage(err)}`);
+      setLogoError(`Gagal menyimpan logo: ${getErrorMessage(err)}`);
+    } finally {
+      logoSaveLock.current = false;
+      setSavingLogo(false);
     }
   };
 
-  const handleSaveKopSettings = async (e) => {
+  const handleSaveKopSettings = async (e, titleOnly = false) => {
     e.preventDefault();
+    if (!kopLoaded || kopSaveLock.current) return;
+    kopSaveLock.current = true;
+    setSavingKop(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      await axios.post(`${API}/settings/kop`, kopSettings);
+      const values = titleOnly ? { APP_TITLE: kopSettings.APP_TITLE } : { ...kopSettings };
+      await axios.post(`${API}/settings/kop`, values);
+      onSettingsSaved?.(values);
       setSuccessMsg('Pengaturan teks dan tata letak Kop Surat berhasil disimpan!');
+      setKopError('');
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
-      setErrorMsg(`Gagal menyimpan pengaturan kop surat: ${getErrorMessage(err)}`);
+      setKopError(`Gagal menyimpan pengaturan kop surat: ${getErrorMessage(err)}`);
+    } finally {
+      kopSaveLock.current = false;
+      setSavingKop(false);
     }
   };
 
@@ -252,7 +324,7 @@ const MasterDashboard = () => {
   
   // Alert Component for forms
   const ErrorAlert = () => errorMsg ? (
-    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
+    <div role="alert" className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
       <p className="font-bold">Error!</p>
       <p>{errorMsg}</p>
     </div>
@@ -292,6 +364,7 @@ const MasterDashboard = () => {
 
       {/* Content Area */}
       <div className="bg-white rounded-b-lg shadow-md p-6 min-h-[500px]">
+        {activeTab !== 'settings' && errorMsg && <ErrorAlert />}
         {loading ? (
           <div className="flex justify-center items-center h-64"><p className="text-gray-500 animate-pulse">Memuat data...</p></div>
         ) : (
@@ -498,14 +571,20 @@ const MasterDashboard = () => {
             {activeTab === 'settings' && (
               <div>
                 <h2 className="text-xl font-bold mb-4">Pengaturan Sistem</h2>
-                <ErrorAlert />
                 <SuccessAlert />
                 
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 max-w-xl">
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">Identitas Aplikasi</h3>
                   <p className="text-sm text-gray-500 mb-4">Ubah judul aplikasi dan logo resmi yang muncul pada dokumen cetak SPK maupun navbar.</p>
                   
-                  <div className="mb-6">
+                  {kopError && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
+                      <p>{kopError}</p>
+                      <button type="button" onClick={() => fetchData('settings')} className="text-blue-700 underline mt-1">Coba Muat Ulang</button>
+                    </div>
+                  )}
+
+                  <fieldset disabled={!kopLoaded || savingKop} className="mb-6 min-w-0 disabled:opacity-60">
                     <label className="block text-xs font-semibold mb-1 text-gray-600">Judul Aplikasi</label>
                     <input 
                       type="text" 
@@ -515,37 +594,46 @@ const MasterDashboard = () => {
                       placeholder="SPK Kendaraan UNHAS" 
                     />
                     <div className="mt-2 text-right">
-                      <button onClick={handleSaveKopSettings} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm transition-colors shadow-sm">
+                      <button onClick={e => handleSaveKopSettings(e, true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm transition-colors shadow-sm">
                         💾 Simpan Judul
                       </button>
                     </div>
-                  </div>
+                  </fieldset>
 
                   <hr className="my-6 border-gray-300" />
                   
                   <h4 className="font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-3">Logo Institusi</h4>
-                  <div className="flex items-center gap-6 mb-4">
-                    <div className="w-24 h-24 bg-white border border-gray-300 rounded-md flex items-center justify-center overflow-hidden p-2">
+                  
+                  {logoError && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
+                      <p>{logoError}</p>
+                      <button type="button" onClick={() => fetchData('settings')} className="text-blue-700 underline mt-1">Coba Muat Ulang</button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-6 mb-4">
+                    <div className="w-24 h-24 shrink-0 bg-white border border-gray-300 rounded-md flex items-center justify-center overflow-hidden p-2">
                       {logoPreview ? <img src={logoPreview} alt="Logo Preview" className="max-w-full max-h-full object-contain" /> : <span className="text-xs text-gray-400">Tanpa Logo</span>}
                     </div>
-                    <div>
-                      <input type="file" accept="image/*" onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setLogoFile(file);
-                          setLogoPreview(URL.createObjectURL(file));
-                        }
-                      }} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                    <div className="min-w-0 max-w-full flex-1 basis-48">
+                      <input ref={logoInput} aria-label="Logo Institusi" type="file" accept="image/jpeg,image/png,image/gif" disabled={savingLogo} onChange={handleLogoSelection} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                     </div>
                   </div>
-                  <button onClick={handleSaveLogo} disabled={!logoFile} className={`${btnClass} disabled:opacity-50 disabled:cursor-not-allowed`}>💾 Simpan Logo</button>
+                  <button onClick={handleSaveLogo} disabled={!logoFile || savingLogo} aria-busy={savingLogo} className={`${btnClass} min-w-32 disabled:opacity-50 disabled:cursor-not-allowed`}>{savingLogo ? 'Menyimpan...' : '💾 Simpan Logo'}</button>
                 </div>
                 
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6 max-w-4xl">
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">Teks & Tata Letak Kop Surat</h3>
                   <p className="text-sm text-gray-500 mb-4">Atur baris teks identitas institusi (kiri) dan kontak (kanan).</p>
                   
+                  {kopError && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
+                      <p>{kopError}</p>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSaveKopSettings} className="space-y-6">
+                    <fieldset disabled={!kopLoaded || savingKop} className="min-w-0 space-y-6 disabled:opacity-60">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Bagian Kiri */}
                       <div className="space-y-2">
@@ -595,6 +683,7 @@ const MasterDashboard = () => {
                     </div>
                     
                     <button type="submit" className={btnClass}>💾 Simpan Pengaturan Kop</button>
+                    </fieldset>
                   </form>
                 </div>
               </div>

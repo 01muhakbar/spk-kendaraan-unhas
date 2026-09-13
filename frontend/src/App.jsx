@@ -1,13 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { fetchLogo, fetchKop, resolveLogoUrl } from './settings';
 import MasterDashboard from './pages/MasterDashboard';
 import CreateSPK from './pages/CreateSPK';
 import PrintSPK from './pages/PrintSPK';
 import EditSPK from './pages/EditSPK';
-
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
-const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
 function App() {
   const [logoUrl, setLogoUrl] = useState(null);
@@ -15,38 +12,36 @@ function App() {
   const [appTitle, setAppTitle] = useState('SPK Kendaraan UNHAS');
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchSettings = async () => {
-      try {
-        const [logoRes, kopRes] = await Promise.all([
-          axios.get(`${API}/settings/logo`),
-          axios.get(`${API}/settings/kop`)
-        ]);
-
-        if (logoRes.data.logo_url) {
-          const fullLogoUrl = logoRes.data.logo_url.startsWith('http') 
-            ? logoRes.data.logo_url 
-            : `${API_BASE}${logoRes.data.logo_url}`;
-          setLogoUrl(fullLogoUrl);
-          
-          // Inject favicon
-          let link = document.querySelector("link[rel~='icon']");
-          if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
-          }
-          link.href = fullLogoUrl;
-        }
-
-        if (kopRes.data && kopRes.data.APP_TITLE) {
-          setAppTitle(kopRes.data.APP_TITLE);
-        }
-      } catch (err) {
-        console.error('Gagal memuat pengaturan aplikasi:', err);
+      const options = { signal: controller.signal };
+      const [logo, kop] = await Promise.allSettled([fetchLogo(options), fetchKop(options)]);
+      if (controller.signal.aborted) return;
+      if (logo.status === 'fulfilled') setLogoUrl(resolveLogoUrl(logo.value.logo_url));
+      if (kop.status === 'fulfilled') setAppTitle(kop.value.APP_TITLE || 'SPK Kendaraan UNHAS');
+      for (const result of [logo, kop]) {
+        if (result.status === 'rejected') console.error('Gagal memuat pengaturan aplikasi:', result.reason);
       }
     };
     fetchSettings();
+    return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!logoUrl) return;
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = logoUrl;
+  }, [logoUrl]);
+
+  const handleSettingsSaved = (settings) => {
+    if (Object.hasOwn(settings, 'logo_url')) setLogoUrl(resolveLogoUrl(settings.logo_url));
+    if (Object.hasOwn(settings, 'APP_TITLE')) setAppTitle(settings.APP_TITLE || 'SPK Kendaraan UNHAS');
+  };
   return (
     <Router>
       <div className="min-h-screen flex flex-col bg-gray-100">
@@ -71,7 +66,7 @@ function App() {
         
         <main className="flex-1 w-full print:p-0 print:m-0">
           <Routes>
-            <Route path="/" element={<MasterDashboard />} />
+            <Route path="/" element={<MasterDashboard onSettingsSaved={handleSettingsSaved} />} />
             <Route path="/create-spk" element={<CreateSPK />} />
             <Route path="/edit-spk/:id" element={<EditSPK />} />
             <Route path="/print/:id" element={<PrintSPK />} />

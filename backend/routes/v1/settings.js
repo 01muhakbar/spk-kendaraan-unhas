@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const models = require('../../models');
+const { SystemSetting, sequelize } = require('../../models');
 
-// (Local file system folder creation removed for Vercel Serverless compatibility)
+if (!SystemSetting) {
+  console.error('CRITICAL: SystemSetting model is undefined upon import in settings.js');
+}
 
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('cloudinary').v2;
@@ -23,24 +23,66 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
+  // Leave room for multipart overhead below Vercel's 4.5 MB payload limit.
+  limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 0 },
+  fileFilter: (req, file, callback) => {
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.mimetype)) {
+      const error = new Error('Format logo harus JPG, PNG, atau GIF.');
+      error.code = 'INVALID_LOGO_FORMAT';
+      return callback(error);
+    }
+    callback(null, true);
+  }
 });
+
+const uploadLogo = upload.single('logo');
+
+const settingsError = (res, error, message) => {
+  console.error('Settings operation failed:', error.name, error.original?.code || error.code || 'UNKNOWN');
+  return res.status(500).json({ error: message });
+};
 
 // GET /api/v1/settings/logo
 router.get('/logo', async (req, res) => {
   try {
-    const setting = await models.SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
+    const setting = await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
     if (!setting) {
       return res.json({ logo_url: null });
     }
     res.json({ logo_url: setting.setting_value });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    settingsError(res, error, 'Gagal memuat logo institusi. Silakan coba lagi.');
   }
 });
 
 // POST /api/v1/settings/logo
-router.post('/logo', upload.single('logo'), async (req, res) => {
+router.post('/logo', async (req, res, next) => {
+  // Check the settings table before creating an asset in Cloudinary.
+  try {
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
+    await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
+  } catch (error) {
+    return settingsError(res, error, 'Penyimpanan pengaturan belum tersedia. Silakan coba lagi.');
+  }
+  uploadLogo(req, res, (error) => {
+    if (!error) return next();
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Ukuran logo maksimal 4 MB.' });
+    }
+    if (error.code === 'INVALID_LOGO_FORMAT') {
+      return res.status(400).json({ error: error.message });
+    }
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({ error: 'Unggah satu file gambar melalui kolom logo.' });
+    }
+    console.error('Logo upload failed:', error.name, error.http_code || error.code || 'UNKNOWN');
+    const status = error.http_code === 400 ? 400 : 502;
+    return res.status(status).json({ error: status === 400
+      ? 'File logo tidak dapat dibaca. Gunakan gambar JPG, PNG, atau GIF yang valid.'
+      : 'Layanan unggah logo tidak tersedia. Silakan coba lagi.' });
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Tidak ada file gambar yang diunggah' });
@@ -48,37 +90,39 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
 
     const logoUrl = req.file.path; // Cloudinary returns the full URL in path
     
-    // Cek apakah logo sudah ada, jika ada ambil setting lamanya
-    const existing = await models.SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
-    
-    // (Opsional) Hapus file di Cloudinary jika perlu, 
-    // tapi untuk sementara kita biarkan saja agar aman.
-
-    // Upsert
-    if (existing) {
-      await existing.update({ setting_value: logoUrl });
-    } else {
-      await SystemSetting.create({
-        setting_key: 'LOGO_KOP_SURAT',
-        setting_value: logoUrl
-      });
-    }
+    await SystemSetting.upsert({
+      setting_key: 'LOGO_KOP_SURAT',
+      setting_value: logoUrl
+    });
 
     res.json({ message: 'Logo berhasil disimpan', logo_url: logoUrl });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Only remove the asset created by this request, and only when a read
+    // confirms it was not saved (a connection failure can hide a committed write).
+    if (req.file?.filename) {
+      try {
+        const saved = await SystemSetting.findOne({ where: { setting_key: 'LOGO_KOP_SURAT' } });
+        if (saved?.setting_value !== req.file.path) {
+          await cloudinary.uploader.destroy(req.file.filename);
+        }
+      } catch (cleanupError) {
+        console.error('Logo cleanup deferred:', cleanupError.name);
+      }
+    }
+    settingsError(res, error, 'Gagal menyimpan logo institusi. Muat ulang pengaturan sebelum mencoba lagi.');
   }
 });
 
 // GET /api/v1/settings/kop
 router.get('/kop', async (req, res) => {
   try {
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
     const keys = [
       'APP_TITLE',
       'KOP_KIRI_1', 'KOP_KIRI_2', 'KOP_KIRI_3', 'KOP_KIRI_4',
       'KOP_KANAN_1', 'KOP_KANAN_2', 'KOP_KANAN_3', 'KOP_KANAN_4', 'KOP_KANAN_5'
     ];
-    const settings = await models.SystemSetting.findAll({
+    const settings = await SystemSetting.findAll({
       where: { setting_key: keys }
     });
     
@@ -102,36 +146,36 @@ router.get('/kop', async (req, res) => {
 
     res.json(config);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    settingsError(res, error, 'Gagal memuat kop surat. Silakan coba lagi.');
   }
 });
 
 // POST /api/v1/settings/kop
 router.post('/kop', async (req, res) => {
   try {
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
     const keys = [
       'APP_TITLE',
       'KOP_KIRI_1', 'KOP_KIRI_2', 'KOP_KIRI_3', 'KOP_KIRI_4',
       'KOP_KANAN_1', 'KOP_KANAN_2', 'KOP_KANAN_3', 'KOP_KANAN_4', 'KOP_KANAN_5'
     ];
     
-    for (const key of keys) {
-      if (req.body[key] !== undefined) {
-        const existing = await models.SystemSetting.findOne({ where: { setting_key: key } });
-        if (existing) {
-          await existing.update({ setting_value: req.body[key] });
-        } else {
-          await models.SystemSetting.create({
-            setting_key: key,
-            setting_value: req.body[key]
-          });
-        }
-      }
+    const entries = keys.filter(key => req.body?.[key] !== undefined);
+    if (!entries.length || entries.some(key => typeof req.body[key] !== 'string')) {
+      return res.status(400).json({ error: 'Pengaturan harus berisi teks yang valid.' });
     }
+    await sequelize.transaction(async (transaction) => {
+      for (const key of entries) {
+        await SystemSetting.upsert({
+          setting_key: key,
+          setting_value: req.body[key]
+        }, { transaction });
+      }
+    });
     
     res.json({ message: 'Pengaturan Kop Surat berhasil disimpan' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    settingsError(res, error, 'Gagal menyimpan kop surat. Silakan coba lagi.');
   }
 });
 
