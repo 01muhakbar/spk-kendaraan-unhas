@@ -9,6 +9,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
     dialect: process.env.DB_DIALECT,
+    dialectModule: require('mysql2'), // Memaksa bundler Vercel menyertakan mysql2
     logging: false,
     dialectOptions: process.env.DB_SSL === 'true' ? {
       ssl: {
