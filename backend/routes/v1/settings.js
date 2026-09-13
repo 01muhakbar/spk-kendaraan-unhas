@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { SystemSetting, sequelize } = require('../../models');
+const SystemSetting = require('../../models/SystemSetting');
+const sequelize = require('../../config/database');
 
 if (!SystemSetting) {
   console.error('CRITICAL: SystemSetting model is undefined upon import in settings.js');

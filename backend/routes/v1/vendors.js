@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { VendorMaster } = require('../../models');
+const VendorMaster = require('../../models/VendorMaster');
 
 // GET all vendors
 router.get('/', async (req, res) => {

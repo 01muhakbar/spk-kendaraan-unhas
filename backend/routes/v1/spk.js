@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { SPK, Vehicle, VendorMaster, sequelize } = require('../../models');
+const SPK = require('../../models/SPK');
+const Vehicle = require('../../models/Vehicle');
+const VendorMaster = require('../../models/VendorMaster');
+const sequelize = require('../../config/database');
 const { Op } = require('sequelize');
 
 if (!SPK || !Vehicle || !VendorMaster) {

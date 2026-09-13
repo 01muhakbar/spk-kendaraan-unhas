@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Signatory } = require('../../models');
+const Signatory = require('../../models/Signatory');
 
 // GET all signatories, optionally filtered by ?role=
 router.get('/', async (req, res) => {

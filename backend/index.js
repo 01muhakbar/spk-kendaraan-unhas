@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { syncDatabase } = require('./models');
+// (Hapus import awal syncDatabase yang rusak di Vercel)
 
 // Import rute v1
 const vehicleRoutes = require('./routes/v1/vehicles');
@@ -29,8 +29,15 @@ app.use('/api/v1/settings', settingsRoutes);
 // Membantu membuat tabel yang kurang tanpa perlu CLI
 app.get('/api/v1/force-sync', async (req, res) => {
   try {
-    const { syncDatabase } = require('./models');
-    await syncDatabase();
+    // Muat langsung tanpa melalui models/index.js (Vercel workaround)
+    require('./models/SystemSetting');
+    require('./models/Vehicle');
+    require('./models/VendorMaster');
+    require('./models/Signatory');
+    require('./models/SPK');
+    const sequelize = require('./config/database');
+    
+    await sequelize.sync();
     res.json({ message: 'Database tables synchronized successfully!' });
   } catch (err) {
     res.status(500).json({ error: 'Database sync failed: ' + err.message, stack: err.stack });
@@ -39,9 +46,9 @@ app.get('/api/v1/force-sync', async (req, res) => {
 
 app.get('/api/v1/debug', (req, res) => {
   try {
-    const models = require('./models');
+    const SystemSetting = require('./models/SystemSetting');
     res.json({
-      keys: Object.keys(models),
+      SystemSettingLoaded: !!SystemSetting,
       env: {
         DB_HOST: !!process.env.DB_HOST,
         DB_DIALECT: process.env.DB_DIALECT,
