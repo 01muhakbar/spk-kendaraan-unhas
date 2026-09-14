@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { fetchLogo, fetchKop, resolveLogoUrl } from './settings';
 import MasterDashboard from './pages/MasterDashboard';
