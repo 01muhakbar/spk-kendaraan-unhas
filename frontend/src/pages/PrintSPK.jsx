@@ -307,7 +307,7 @@ const PrintSPK = () => {
 
           <div className="mt-12 flex justify-end break-inside-avoid">
             <TTD
-              label={`Makassar, ${formatDate(spk.tanggalLaporan)}\nSopir / Pengguna Kendaraan,`}
+              label={`Makassar, ${formatDate(spk.tanggalLaporan)}\nYang Melaporkan / Sopir,`}
               nama={capitalizeEachWord(kendaraan?.nama_sopir)}
             />
           </div>
