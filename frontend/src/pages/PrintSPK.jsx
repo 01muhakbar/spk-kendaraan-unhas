@@ -94,7 +94,7 @@ const TTD = ({ label, nama, nipNik, isNIK = false }) => (
   <div className="text-center" style={{ width: '180px' }}>
     <p className="text-xs">{label}</p>
     <div style={{ height: '60px' }}></div>
-    <p className="font-bold text-xs">{nama || '___________________'}</p>
+    <p className={`${nama && nama.startsWith('(') ? 'text-xs font-normal' : 'font-bold text-xs'}`}>{nama || '___________________'}</p>
     {nipNik && <p className="text-xs">{isNIK ? 'NIK' : 'NIP'}. {nipNik}</p>}
   </div>
 );
@@ -308,7 +308,7 @@ const PrintSPK = () => {
           <div className="mt-12 flex justify-end break-inside-avoid">
             <TTD
               label={`Makassar, ${formatDate(spk.tanggalLaporan)}\nYang Melaporkan / Sopir,`}
-              nama={capitalizeEachWord(kendaraan?.nama_sopir)}
+              nama={spk.pelaporType === 'Manual' ? '(.........................................)' : capitalizeEachWord(kendaraan?.nama_sopir)}
             />
           </div>
         </div>

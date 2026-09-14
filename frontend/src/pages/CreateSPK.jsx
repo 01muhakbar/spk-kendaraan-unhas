@@ -104,6 +104,7 @@ const CreateSPK = () => {
     tanggalMasukBengkel: '',
     masaGaransi: '',
     penerimaType: 'Otomatis',
+    pelaporType: 'Otomatis',
     tabelPekerjaanType: 'Otomatis',
     tabelPekerjaan: [{ jenisPekerjaan: '', satuan: '', kuantitas: '' }],
   });
@@ -283,6 +284,14 @@ const CreateSPK = () => {
             <div className="md:col-span-2">
               <label className={labelClass}>Nama Sopir / Pengguna <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
               <input type="text" readOnly className={readonlyClass} value={selectedKendaraan?.nama_sopir || '—'} />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className={labelClass}>Pengisian Nama "Yang Melaporkan/Sopir"</label>
+              <select className={inputClass} value={formData.pelaporType} onChange={e => setFormData({ ...formData, pelaporType: e.target.value })}>
+                <option value="Otomatis">Otomatis (Tercetak Nama Sopir)</option>
+                <option value="Manual">Manual (.........................................)</option>
+              </select>
             </div>
           </div>
         </div>

@@ -62,6 +62,10 @@ const SPK = sequelize.define('SPK', {
     type: DataTypes.ENUM('Otomatis', 'Manual'),
     defaultValue: 'Otomatis'
   },
+  pelaporType: {
+    type: DataTypes.ENUM('Otomatis', 'Manual'),
+    defaultValue: 'Otomatis'
+  },
   tabelPekerjaanType: {
     type: DataTypes.ENUM('Otomatis', 'Manual'),
     defaultValue: 'Otomatis'
