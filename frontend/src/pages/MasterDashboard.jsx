@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES } from '../settings';
+import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchLembar } from '../settings';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -37,6 +37,18 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     KOP_KIRI_1: '', KOP_KIRI_2: '', KOP_KIRI_3: '', KOP_KIRI_4: '',
     KOP_KANAN_1: '', KOP_KANAN_2: '', KOP_KANAN_3: '', KOP_KANAN_4: '', KOP_KANAN_5: ''
   });
+  
+  const [lembarSettings, setLembarSettings] = useState({
+    LEMBAR1_PENGANTAR: '', LEMBAR1_DUGAAN: '', LEMBAR1_PENUTUP: '',
+    LEMBAR2_JUDUL: '', LEMBAR2_PENGANTAR: '', LEMBAR2_PENUTUP: '',
+    LEMBAR3_JUDUL: '', LEMBAR3_PENUTUP: '',
+    LEMBAR4_JUDUL: '', LEMBAR4_PENGANTAR: '', LEMBAR4_PEKERJAAN: '', LEMBAR4_PENUTUP: '',
+    LEMBAR5_JUDUL: '', LEMBAR5_PENGANTAR: ''
+  });
+  const [lembarLoaded, setLembarLoaded] = useState(false);
+  const [savingLembar, setSavingLembar] = useState(false);
+  const [lembarError, setLembarError] = useState('');
+  const lembarSaveLock = useRef(false);
   
   // Loading state
   const [loading, setLoading] = useState(false);
@@ -95,7 +107,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         if (request !== loadRequest.current) return;
         setVendors(res.data);
       } else if (tab === 'settings') {
-        const [logo, kop] = await Promise.allSettled([fetchLogo(), fetchKop()]);
+        const [logo, kop, lembar] = await Promise.allSettled([fetchLogo(), fetchKop(), fetchLembar()]);
         if (request !== loadRequest.current) return;
         
         if (logo.status === 'fulfilled') {
@@ -111,6 +123,14 @@ const MasterDashboard = ({ onSettingsSaved }) => {
           setKopError('');
         } else {
           setKopError('Gagal memuat kop surat. Penyimpanan judul dan kop belum tersedia.');
+        }
+
+        if (lembar.status === 'fulfilled') {
+          setLembarSettings(lembar.value);
+          setLembarLoaded(true);
+          setLembarError('');
+        } else {
+          setLembarError('Gagal memuat pengaturan teks lembar cetak.');
         }
       }
     } catch (err) {
@@ -313,6 +333,26 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     } finally {
       kopSaveLock.current = false;
       setSavingKop(false);
+    }
+  };
+
+  const handleSaveLembarSettings = async (e) => {
+    e.preventDefault();
+    if (!lembarLoaded || lembarSaveLock.current) return;
+    lembarSaveLock.current = true;
+    setSavingLembar(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      await axios.post(`${API}/settings/lembar`, lembarSettings);
+      setSuccessMsg('Pengaturan teks lembar cetak berhasil disimpan!');
+      setLembarError('');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setLembarError(`Gagal menyimpan pengaturan teks lembar: ${getErrorMessage(err)}`);
+    } finally {
+      lembarSaveLock.current = false;
+      setSavingLembar(false);
     }
   };
 
@@ -683,6 +723,115 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     </div>
                     
                     <button type="submit" className={btnClass}>💾 Simpan Pengaturan Kop</button>
+                    </fieldset>
+                  </form>
+                </div>
+
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6 max-w-4xl mb-8">
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">Pengaturan Teks Lembar Cetak (1-5)</h3>
+                  <p className="text-sm text-gray-500 mb-4">Ubah teks statis pada masing-masing lembar SPK. Gunakan <code>{'{'}{'{'}tanggal_laporan{'}'}{'}'}</code> atau <code>{'{'}{'{'}tanggal_masuk_bengkel{'}'}{'}'}</code> untuk menyisipkan variabel tanggal yang dinamis.</p>
+
+                  {lembarError && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 text-sm text-red-700 rounded shadow-sm">
+                      <p>{lembarError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSaveLembarSettings} className="space-y-6">
+                    <fieldset disabled={!lembarLoaded || savingLembar} className="min-w-0 space-y-6 disabled:opacity-60">
+                      
+                      {/* LEMBAR 1 */}
+                      <div className="p-4 border border-gray-300 rounded bg-white shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3 text-lg border-b pb-2">Lembar 1</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Pengantar</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR1_PENGANTAR || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR1_PENGANTAR: e.target.value})}></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Dugaan Kerusakan</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR1_DUGAAN || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR1_DUGAAN: e.target.value})}></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Penutup</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR1_PENUTUP || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR1_PENUTUP: e.target.value})}></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LEMBAR 2 */}
+                      <div className="p-4 border border-gray-300 rounded bg-white shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3 text-lg border-b pb-2">Lembar 2</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Judul Lembar</label>
+                            <input type="text" className={inputClass} value={lembarSettings.LEMBAR2_JUDUL || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR2_JUDUL: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Pengantar (Gunakan {'{'}{'{'}tanggal_laporan{'}'}{'}'})</label>
+                            <textarea className={inputClass} rows="3" value={lembarSettings.LEMBAR2_PENGANTAR || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR2_PENGANTAR: e.target.value})}></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Penutup</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR2_PENUTUP || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR2_PENUTUP: e.target.value})}></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LEMBAR 3 */}
+                      <div className="p-4 border border-gray-300 rounded bg-white shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3 text-lg border-b pb-2">Lembar 3</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Judul Lembar</label>
+                            <input type="text" className={inputClass} value={lembarSettings.LEMBAR3_JUDUL || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR3_JUDUL: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Penutup</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR3_PENUTUP || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR3_PENUTUP: e.target.value})}></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LEMBAR 4 */}
+                      <div className="p-4 border border-gray-300 rounded bg-white shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3 text-lg border-b pb-2">Lembar 4</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Judul Lembar</label>
+                            <input type="text" className={inputClass} value={lembarSettings.LEMBAR4_JUDUL || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR4_JUDUL: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Pengantar</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR4_PENGANTAR || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR4_PENGANTAR: e.target.value})}></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Pekerjaan</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR4_PEKERJAAN || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR4_PEKERJAAN: e.target.value})}></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Penutup</label>
+                            <textarea className={inputClass} rows="2" value={lembarSettings.LEMBAR4_PENUTUP || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR4_PENUTUP: e.target.value})}></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LEMBAR 5 */}
+                      <div className="p-4 border border-gray-300 rounded bg-white shadow-sm">
+                        <h4 className="font-bold text-gray-800 mb-3 text-lg border-b pb-2">Lembar 5</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Judul Lembar</label>
+                            <input type="text" className={inputClass} value={lembarSettings.LEMBAR5_JUDUL || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR5_JUDUL: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-600">Teks Pengantar (Gunakan {'{'}{'{'}tanggal_masuk_bengkel{'}'}{'}'} dan {'{'}{'{'}tanggal_masuk_terbilang{'}'}{'}'})</label>
+                            <textarea className={inputClass} rows="3" value={lembarSettings.LEMBAR5_PENGANTAR || ''} onChange={e => setLembarSettings({...lembarSettings, LEMBAR5_PENGANTAR: e.target.value})}></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button type="submit" className={btnClass}>💾 Simpan Pengaturan Teks Lembar</button>
                     </fieldset>
                   </form>
                 </div>

@@ -180,4 +180,78 @@ router.post('/kop', async (req, res) => {
   }
 });
 
+// GET /api/v1/settings/lembar
+router.get('/lembar', async (req, res) => {
+  try {
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
+    const keys = [
+      'LEMBAR1_PENGANTAR', 'LEMBAR1_DUGAAN', 'LEMBAR1_PENUTUP',
+      'LEMBAR2_JUDUL', 'LEMBAR2_PENGANTAR', 'LEMBAR2_PENUTUP',
+      'LEMBAR3_JUDUL', 'LEMBAR3_PENUTUP',
+      'LEMBAR4_JUDUL', 'LEMBAR4_PENGANTAR', 'LEMBAR4_PEKERJAAN', 'LEMBAR4_PENUTUP',
+      'LEMBAR5_JUDUL', 'LEMBAR5_PENGANTAR'
+    ];
+    const settings = await SystemSetting.findAll({
+      where: { setting_key: keys }
+    });
+    
+    // Default values matching the current text in PrintSPK.jsx
+    const config = {
+      LEMBAR1_PENGANTAR: 'Dengan hormat dilaporkan bahwa kendaraan dinas operasional Universitas Hasanuddin:',
+      LEMBAR1_DUGAAN: 'Adapun dugaan kerusakan sebagai berikut:',
+      LEMBAR1_PENUTUP: 'Demikian laporan ini dibuat dengan sebenar-benarnya untuk dapat ditindaklanjuti sebagaimana mestinya.',
+      LEMBAR2_JUDUL: 'Surat Pengantar Pemeriksaan Kendaraan Dinas',
+      LEMBAR2_PENGANTAR: 'Bersama ini kami sampaikan bahwa berdasarkan bukti pengecekan fisik terlampir pada tanggal {{tanggal_laporan}}, mohon bantuan Tim Teknisi Kendaraan Dinas Universitas Hasanuddin untuk melakukan pemeriksaan/pengecekan fisik terhadap kendaraan dinas dengan data sebagai berikut:',
+      LEMBAR2_PENUTUP: 'Demikian surat pengantar ini dibuat untuk dapat ditindaklanjuti sebagaimana mestinya.',
+      LEMBAR3_JUDUL: 'Bukti Pengecekan / Pemeriksaan Fisik Kendaraan Dinas',
+      LEMBAR3_PENUTUP: 'Demikian hasil pengecekan ini kami laporkan untuk dapat ditindaklanjuti.',
+      LEMBAR4_JUDUL: 'PERMINTAAN PEMERIKSAAN / PERBAIKAN KENDARAAN',
+      LEMBAR4_PENGANTAR: 'Mohon diperiksa/ diperbaiki Kendaraan Dinas Universitas Hasanuddin:',
+      LEMBAR4_PEKERJAAN: 'Adapun pekerjaan yang dimohonkan:',
+      LEMBAR4_PENUTUP: 'Demikian surat permintaan ini disampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.',
+      LEMBAR5_JUDUL: 'Tanda Terima Pekerjaan Perbaikan Kendaraan Dinas',
+      LEMBAR5_PENGANTAR: 'Pada hari ini, {{tanggal_masuk_bengkel}} atau {{tanggal_masuk_terbilang}}, telah diserahterimakan kendaraan dinas sebagai berikut:'
+    };
+
+    settings.forEach(s => {
+      config[s.setting_key] = s.setting_value;
+    });
+
+    res.json(config);
+  } catch (error) {
+    settingsError(res, error, 'Gagal memuat pengaturan teks lembar. Silakan coba lagi.');
+  }
+});
+
+// POST /api/v1/settings/lembar
+router.post('/lembar', async (req, res) => {
+  try {
+    if (!SystemSetting) throw new Error('SystemSetting model is not loaded');
+    const keys = [
+      'LEMBAR1_PENGANTAR', 'LEMBAR1_DUGAAN', 'LEMBAR1_PENUTUP',
+      'LEMBAR2_JUDUL', 'LEMBAR2_PENGANTAR', 'LEMBAR2_PENUTUP',
+      'LEMBAR3_JUDUL', 'LEMBAR3_PENUTUP',
+      'LEMBAR4_JUDUL', 'LEMBAR4_PENGANTAR', 'LEMBAR4_PEKERJAAN', 'LEMBAR4_PENUTUP',
+      'LEMBAR5_JUDUL', 'LEMBAR5_PENGANTAR'
+    ];
+    
+    const entries = keys.filter(key => req.body?.[key] !== undefined);
+    if (!entries.length || entries.some(key => typeof req.body[key] !== 'string')) {
+      return res.status(400).json({ error: 'Pengaturan harus berisi teks yang valid.' });
+    }
+    await sequelize.transaction(async (transaction) => {
+      for (const key of entries) {
+        await SystemSetting.upsert({
+          setting_key: key,
+          setting_value: req.body[key]
+        }, { transaction });
+      }
+    });
+    
+    res.json({ message: 'Pengaturan teks lembar berhasil disimpan' });
+  } catch (error) {
+    settingsError(res, error, 'Gagal menyimpan pengaturan teks lembar. Silakan coba lagi.');
+  }
+});
+
 module.exports = router;

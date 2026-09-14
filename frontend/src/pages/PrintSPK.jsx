@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { fetchLogo, fetchKop, resolveLogoUrl } from '../settings';
+import { fetchLogo, fetchKop, resolveLogoUrl, fetchLembar } from '../settings';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -107,6 +107,7 @@ const PrintSPK = () => {
   const [pejabat, setPejabat] = useState([]);
   const [logoUrl, setLogoUrl] = useState(null);
   const [kopSettings, setKopSettings] = useState(null);
+  const [lembarSettings, setLembarSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -121,14 +122,16 @@ const PrintSPK = () => {
         axios.get(`${API}/spk/${id}`, options),
         axios.get(`${API}/signatories`, options),
         fetchLogo(options),
-        fetchKop(options)
+        fetchKop(options),
+        fetchLembar(options)
       ]);
       if (controller.signal.aborted) return;
-      const [spkResult, sdm, logo, kop] = results;
+      const [spkResult, sdm, logo, kop, lembar] = results;
       if (spkResult.status === 'fulfilled') setSpk(spkResult.value.data);
       if (sdm.status === 'fulfilled') setPejabat(sdm.value.data);
       if (logo.status === 'fulfilled') setLogoUrl(resolveLogoUrl(logo.value.logo_url));
       if (kop.status === 'fulfilled') setKopSettings(kop.value);
+      if (lembar.status === 'fulfilled') setLembarSettings(lembar.value);
       const failed = [];
       if (spkResult.status === 'rejected') failed.push('data SPK');
       if (sdm.status === 'rejected') failed.push('data pejabat');
@@ -138,6 +141,7 @@ const PrintSPK = () => {
       } else {
         if (logo.status === 'rejected') console.warn('Gagal memuat logo institusi, dokumen akan dicetak tanpa logo.');
         if (kop.status === 'rejected') console.warn('Gagal memuat pengaturan kop surat, menggunakan nilai bawaan (fallback).');
+        if (lembar.status === 'rejected') console.warn('Gagal memuat pengaturan teks lembar, menggunakan nilai bawaan.');
       }
       setLoading(false);
     };
@@ -213,6 +217,14 @@ const PrintSPK = () => {
   const daftarKerusakan = parseJSON(spk.daftarKerusakan, []);
   const listKerusakanAktif = daftarKerusakan.filter(item => item && item.trim() !== "");
 
+  const replaceVars = (text) => {
+    if (!text || !spk) return text;
+    let res = text.replace(/\{\{tanggal_laporan\}\}/g, formatDate(spk.tanggalLaporan));
+    res = res.replace(/\{\{tanggal_masuk_bengkel\}\}/g, formatDate(spk.tanggalMasukBengkel));
+    res = res.replace(/\{\{tanggal_masuk_terbilang\}\}/g, formatTanggalTerbilang(spk.tanggalMasukBengkel));
+    return res;
+  };
+
   const pageClass = "bg-white text-black shadow-md mx-auto border border-gray-300 print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-xs w-[210mm] h-[297mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col";
 
   const isAutoDownload = new URLSearchParams(location.search).get('autoDownload') === 'true';
@@ -266,8 +278,8 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <p className="mb-3 text-justify leading-relaxed">
-            Dengan hormat dilaporkan bahwa kendaraan dinas operasional Universitas Hasanuddin:
+          <p className="mb-3 text-justify leading-relaxed whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR1_PENGANTAR) || 'Dengan hormat dilaporkan bahwa kendaraan dinas operasional Universitas Hasanuddin:'}
           </p>
 
           <table className="mb-4 w-full">
@@ -280,7 +292,7 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <p className="mb-2 font-semibold">Adapun dugaan kerusakan sebagai berikut:</p>
+          <p className="mb-2 font-semibold whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR1_DUGAAN) || 'Adapun dugaan kerusakan sebagai berikut:'}</p>
           <ol className="list-decimal pl-6 mb-4 space-y-1">
             {listKerusakanAktif.map((item, i) => (
               <li key={i} className="min-h-[20px] border-b border-gray-200 border-dotted w-full">
@@ -289,8 +301,8 @@ const PrintSPK = () => {
             ))}
           </ol>
 
-          <p className="mt-6 mb-8 text-justify">
-            Demikian laporan ini dibuat dengan sebenar-benarnya untuk dapat ditindaklanjuti sebagaimana mestinya.
+          <p className="mt-6 mb-8 text-justify whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR1_PENUTUP) || 'Demikian laporan ini dibuat dengan sebenar-benarnya untuk dapat ditindaklanjuti sebagaimana mestinya.'}
           </p>
 
           <div className="mt-12 flex justify-end break-inside-avoid">
@@ -323,15 +335,12 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <h3 className="text-center font-bold text-sm uppercase mb-6">
-            Surat Pengantar Pemeriksaan Kendaraan Dinas
+          <h3 className="text-center font-bold text-sm uppercase mb-6 whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR2_JUDUL) || 'Surat Pengantar Pemeriksaan Kendaraan Dinas'}
           </h3>
 
-          <p className="mb-4 text-justify leading-relaxed">
-            Bersama ini kami sampaikan bahwa berdasarkan bukti pengecekan fisik terlampir pada tanggal&nbsp;
-            <span className="font-semibold">{formatDate(spk.tanggalLaporan)}</span>, mohon bantuan
-            Tim Teknisi Kendaraan Dinas Universitas Hasanuddin untuk melakukan pemeriksaan/pengecekan fisik
-            terhadap kendaraan dinas dengan data sebagai berikut:
+          <p className="mb-4 text-justify leading-relaxed whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR2_PENGANTAR) || `Bersama ini kami sampaikan bahwa berdasarkan bukti pengecekan fisik terlampir pada tanggal ${formatDate(spk.tanggalLaporan)}, mohon bantuan Tim Teknisi Kendaraan Dinas Universitas Hasanuddin untuk melakukan pemeriksaan/pengecekan fisik terhadap kendaraan dinas dengan data sebagai berikut:`}
           </p>
 
           <table className="mb-4 w-full ml-4">
@@ -343,8 +352,8 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <p className="text-justify">
-            Demikian surat pengantar ini dibuat untuk dapat ditindaklanjuti sebagaimana mestinya.
+          <p className="text-justify whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR2_PENUTUP) || 'Demikian surat pengantar ini dibuat untuk dapat ditindaklanjuti sebagaimana mestinya.'}
           </p>
 
           <div className="mt-12 flex justify-end pt-10 break-inside-avoid">
@@ -361,8 +370,8 @@ const PrintSPK = () => {
         {/* LEMBAR 3 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm uppercase mb-4">
-            Bukti Pengecekan / Pemeriksaan Fisik Kendaraan Dinas
+          <h3 className="text-center font-bold text-sm uppercase mb-4 whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR3_JUDUL) || 'Bukti Pengecekan / Pemeriksaan Fisik Kendaraan Dinas'}
           </h3>
 
           <table className="mb-4 w-full">
@@ -410,7 +419,7 @@ const PrintSPK = () => {
           </table>
 
           <div className="mt-12 pt-8 break-inside-avoid">
-            <p className="mb-8">Demikian hasil pengecekan ini kami laporkan untuk dapat ditindaklanjuti.</p>
+            <p className="mb-8 whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR3_PENUTUP) || 'Demikian hasil pengecekan ini kami laporkan untuk dapat ditindaklanjuti.'}</p>
             <p className="font-semibold mb-4">Tim Teknisi Otomotif Unhas</p>
             <div className="flex flex-col gap-8">
               <div className="flex items-start">
@@ -436,8 +445,8 @@ const PrintSPK = () => {
         {/* LEMBAR 4 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm uppercase mb-0.5">
-            PERMINTAAN PEMERIKSAAN / PERBAIKAN KENDARAAN
+          <h3 className="text-center font-bold text-sm uppercase mb-0.5 whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR4_JUDUL) || 'PERMINTAAN PEMERIKSAAN / PERBAIKAN KENDARAAN'}
           </h3>
           <p className="text-center text-xs mb-4">Nomor: <span className="font-semibold">{spk.nomorSPK}</span></p>
 
@@ -454,8 +463,8 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <p className="mb-3 text-justify leading-relaxed">
-            Mohon diperiksa/ diperbaiki Kendaraan Dinas Universitas Hasanuddin:
+          <p className="mb-3 text-justify leading-relaxed whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR4_PENGANTAR) || 'Mohon diperiksa/ diperbaiki Kendaraan Dinas Universitas Hasanuddin:'}
           </p>
 
           <table className="mb-3 w-full ml-4">
@@ -467,13 +476,13 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <p className="mb-1 font-semibold">Adapun pekerjaan yang dimohonkan:</p>
+          <p className="mb-1 font-semibold whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR4_PEKERJAAN) || 'Adapun pekerjaan yang dimohonkan:'}</p>
           <ol className="list-decimal pl-6 mb-4 space-y-0.5">
             {listKerusakanAktif.map((item, i) => <li key={i}>{item}</li>)}
           </ol>
 
-          <p className="text-justify">
-            Demikian surat permintaan ini disampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.
+          <p className="text-justify whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR4_PENUTUP) || 'Demikian surat permintaan ini disampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.'}
           </p>
 
           <div className="mt-12 pt-6 mb-4 break-inside-avoid">
@@ -501,16 +510,12 @@ const PrintSPK = () => {
         {/* LEMBAR 5 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm uppercase mb-4">
-            Tanda Terima Pekerjaan Perbaikan Kendaraan Dinas
+          <h3 className="text-center font-bold text-sm uppercase mb-4 whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR5_JUDUL) || 'Tanda Terima Pekerjaan Perbaikan Kendaraan Dinas'}
           </h3>
 
-          <p className="mb-3 text-justify leading-relaxed">
-            Pada hari ini,{' '}
-            <span className="font-semibold">{formatHariTanggal(spk.tanggalMasukBengkel)}</span>{' '}
-            atau{' '}
-            <span className="font-semibold italic">{formatTanggalTerbilang(spk.tanggalMasukBengkel)}</span>,
-            telah diserahterimakan kendaraan dinas sebagai berikut:
+          <p className="mb-3 text-justify leading-relaxed whitespace-pre-wrap">
+            {replaceVars(lembarSettings?.LEMBAR5_PENGANTAR) || `Pada hari ini, ${formatHariTanggal(spk.tanggalMasukBengkel)} atau ${formatTanggalTerbilang(spk.tanggalMasukBengkel)}, telah diserahterimakan kendaraan dinas sebagai berikut:`}
           </p>
 
           <table className="mb-3 w-full ml-4">

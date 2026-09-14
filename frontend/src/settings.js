@@ -22,3 +22,11 @@ export async function fetchKop(options) {
   }
   return data;
 }
+
+export async function fetchLembar(options) {
+  const { data } = await axios.get(`${API}/settings/lembar`, options);
+  if (!data || typeof data.LEMBAR1_PENGANTAR !== 'string') {
+    throw new Error('Respons pengaturan lembar tidak valid. Silakan muat ulang.');
+  }
+  return data;
+}
