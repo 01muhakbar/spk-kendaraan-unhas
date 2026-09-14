@@ -37,7 +37,7 @@ app.get('/api/v1/force-sync', async (req, res) => {
     require('./models/SPK');
     const sequelize = require('./config/database');
     
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     res.json({ message: 'Database tables synchronized successfully!' });
   } catch (err) {
     res.status(500).json({ error: 'Database sync failed: ' + err.message, stack: err.stack });
