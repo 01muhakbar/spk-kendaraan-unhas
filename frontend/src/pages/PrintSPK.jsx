@@ -94,7 +94,7 @@ const TTD = ({ label, nama, nipNik, isNIK = false }) => (
   <div className="text-center" style={{ width: '180px' }}>
     <p className="text-xs">{label}</p>
     <div style={{ height: '60px' }}></div>
-    <p className="font-bold text-xs underline">{nama || '___________________'}</p>
+    <p className="font-bold text-xs">{nama || '___________________'}</p>
     {nipNik && <p className="text-xs">{isNIK ? 'NIK' : 'NIP'}. {nipNik}</p>}
   </div>
 );
@@ -187,7 +187,7 @@ const PrintSPK = () => {
   if (loadError) return (
     <div className="p-8 text-center">
       <p role="alert" className="text-red-700 mb-4">{loadError}</p>
-      <button type="button" onClick={() => setRetry(value => value + 1)} className="text-blue-700 underline">Muat ulang dokumen</button>
+      <button type="button" onClick={() => setRetry(value => value + 1)} className="text-blue-700">Muat ulang dokumen</button>
     </div>
   );
   if (!spk) return <div className="p-8 text-center text-red-500 font-semibold">Data SPK tidak ditemukan.</div>;
@@ -323,7 +323,7 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <h3 className="text-center font-bold text-sm underline uppercase mb-6">
+          <h3 className="text-center font-bold text-sm uppercase mb-6">
             Surat Pengantar Pemeriksaan Kendaraan Dinas
           </h3>
 
@@ -352,7 +352,7 @@ const PrintSPK = () => {
               <p className="mb-2">Makassar, {formatDate(spk.tanggalLaporan)}</p>
               <p>{kasiTU?.jabatan || 'Kepala Seksi Tata Usaha dan RT'},</p>
               <div style={{ height: '70px' }}></div>
-              <p className="font-bold underline">{kasiTU?.nama_lengkap || 'Jayadi Arifin, SE'}</p>
+              <p className="font-bold">{kasiTU?.nama_lengkap || 'Jayadi Arifin, SE'}</p>
               <p>NIP. {kasiTU?.nip_nik || '197209162014091001'}</p>
             </div>
           </div>
@@ -361,7 +361,7 @@ const PrintSPK = () => {
         {/* LEMBAR 3 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm underline uppercase mb-4">
+          <h3 className="text-center font-bold text-sm uppercase mb-4">
             Bukti Pengecekan / Pemeriksaan Fisik Kendaraan Dinas
           </h3>
 
@@ -416,7 +416,7 @@ const PrintSPK = () => {
               <div className="flex items-start">
                 <div className="w-6">1.</div>
                 <div className="w-48">
-                  <p className="font-bold underline">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
+                  <p className="font-bold">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
                   <p>NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
                 </div>
                 <div className="ml-4">(…… …………………………)</div>
@@ -424,7 +424,7 @@ const PrintSPK = () => {
               <div className="flex items-start">
                 <div className="w-6">2.</div>
                 <div className="w-48">
-                  <p className="font-bold underline">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
+                  <p className="font-bold">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
                   <p>NIP. {teknisi2?.nip_nik || '198508272018015001'}</p>
                 </div>
                 <div className="ml-4">(…… …………………………)</div>
@@ -436,7 +436,7 @@ const PrintSPK = () => {
         {/* LEMBAR 4 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm underline uppercase mb-0.5">
+          <h3 className="text-center font-bold text-sm uppercase mb-0.5">
             PERMINTAAN PEMERIKSAAN / PERBAIKAN KENDARAAN
           </h3>
           <p className="text-center text-xs mb-4">Nomor: <span className="font-semibold">{spk.nomorSPK}</span></p>
@@ -484,14 +484,14 @@ const PrintSPK = () => {
                 <p className="text-xs">Direktur Komunikasi /</p>
                 <p className="text-xs">Sekretariat Rektor,</p>
                 <div style={{ height: '70px' }}></div>
-                <p className="font-bold underline text-xs">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
+                <p className="font-bold text-xs">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
                 <p className="text-xs">NIP. {direktur?.nip_nik || '197109082022043001'}</p>
               </div>
               <div className="text-center">
                 <p className="text-xs">Kepala Subdit. Kerumahtanggaan</p>
                 <p className="text-xs">dan Keprotokolan,</p>
                 <div style={{ height: '70px' }}></div>
-                <p className="font-bold underline text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+                <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                 <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
               </div>
             </div>
@@ -501,7 +501,7 @@ const PrintSPK = () => {
         {/* LEMBAR 5 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />
-          <h3 className="text-center font-bold text-sm underline uppercase mb-4">
+          <h3 className="text-center font-bold text-sm uppercase mb-4">
             Tanda Terima Pekerjaan Perbaikan Kendaraan Dinas
           </h3>
 
@@ -570,7 +570,7 @@ const PrintSPK = () => {
                 {spk.penerimaType === 'Manual' ? (
                   <p className="text-xs">(.........................................)</p>
                 ) : (
-                  <p className="font-bold underline text-xs">{capitalizeEachWord(kendaraan?.nama_sopir) || '___________________'}</p>
+                  <p className="font-bold text-xs">{capitalizeEachWord(kendaraan?.nama_sopir) || '___________________'}</p>
                 )}
               </div>
               <div className="text-center">
@@ -590,14 +590,14 @@ const PrintSPK = () => {
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start">
                     <div className="w-40">
-                      <p className="font-bold underline text-xs">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
+                      <p className="font-bold text-xs">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
                       <p className="text-xs">NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
                     </div>
                     <div className="text-xs">(……………………)</div>
                   </div>
                   <div className="flex items-start">
                     <div className="w-40">
-                      <p className="font-bold underline text-xs">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
+                      <p className="font-bold text-xs">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
                       <p className="text-xs">NIP. {teknisi2?.nip_nik || '198508272018015001'}</p>
                     </div>
                     <div className="text-xs">(……………………)</div>
@@ -610,7 +610,7 @@ const PrintSPK = () => {
                 <p className="font-semibold text-xs mb-1">Mengetahui:</p>
                 <p>Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
                 <div className="mt-10">
-                  <p className="font-bold underline text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+                  <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                   <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
                 </div>
               </div>
