@@ -258,7 +258,7 @@ const PrintSPK = () => {
                 <td className="w-20 align-top">Kepada Yth.</td>
                 <td className="align-top">:</td>
                 <td>
-                  <p className="font-semibold">Kepala Subdit. Kerumahtanggaan dan Keprotokolan</p>
+                  <p className="font-semibold">{kasiTU?.jabatan || 'Kepala Seksi Tata Usaha dan Rumah Tangga'}</p>
                   <p>Universitas Hasanuddin</p>
                   <p>di Makassar</p>
                 </td>
@@ -315,7 +315,7 @@ const PrintSPK = () => {
                 <td className="py-0.5 align-top">Kepada Yth.</td>
                 <td className="align-top">:</td>
                 <td>
-                  <p>Kepala Seksi Tata Usaha dan Rumah Tangga</p>
+                  <p>{kepalaSubdit?.jabatan || 'Kepala Subdit. Kerumahtanggaan dan Keprotokolan'}</p>
                   <p>Universitas Hasanuddin</p>
                   <p>di Makassar</p>
                 </td>
