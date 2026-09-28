@@ -20,7 +20,15 @@ router.get('/', async (req, res) => {
     }
 
     const vehicles = await Vehicle.findAll({ where: whereClause });
-    res.json(vehicles);
+
+    // Lakukan sorting di level server Node.js (Numerik Plat Nomor)
+    const sortedVehicles = vehicles.sort((a, b) => {
+      const numA = parseInt((a.nomor_polisi || '').match(/\d+/)?.[0] || 0, 10);
+      const numB = parseInt((b.nomor_polisi || '').match(/\d+/)?.[0] || 0, 10);
+      return numA - numB;
+    });
+
+    res.json(sortedVehicles);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
