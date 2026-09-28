@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Vehicle = require('../../models/Vehicle');
 const { Op } = require('sequelize');
+const { z } = require('zod');
 
 // GET all vehicles
 router.get('/', async (req, res) => {
@@ -30,6 +31,31 @@ router.get('/', async (req, res) => {
 
     res.json(sortedVehicles);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST bulk import vehicles
+router.post('/bulk', async (req, res) => {
+  try {
+    const importSchema = z.array(z.object({
+      nomor_polisi: z.string().min(1, "No. Polisi wajib diisi"),
+      merek_type: z.string().optional().nullable().catch(null),
+      jenis_kendaraan: z.string().optional().nullable().catch(null),
+      nama_sopir: z.string().optional().nullable().catch(null),
+    }).passthrough());
+
+    const validDataArray = importSchema.parse(req.body);
+
+    await Vehicle.bulkCreate(validDataArray, {
+      updateOnDuplicate: ["merek_type", "jenis_kendaraan", "nama_sopir", "updatedAt"]
+    });
+
+    res.status(200).json({ message: "Data Kendaraan berhasil diimpor" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validasi gagal: Data CSV tidak sesuai format', details: error.errors });
+    }
     res.status(500).json({ error: error.message });
   }
 });

@@ -72,6 +72,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   const [vendorForm, setVendorForm] = useState({ nama_bengkel: '', alamat_kontak: '' });
 
   const fileInputRef = useRef(null);
+  const vehicleFileInputRef = useRef(null);
 
   useEffect(() => {
     fetchData(activeTab);
@@ -324,6 +325,55 @@ const MasterDashboard = ({ onSettingsSaved }) => {
       setErrorMsg('Format file tidak didukung. Gunakan .json atau .csv');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleExportVehicleCSV = () => {
+    const csvString = Papa.unparse(vehicles);
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Master_Kendaraan_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+  };
+
+  const handleImportVehicleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          setLoading(true);
+          await axios.post(`${API}/vehicles/bulk`, results.data);
+          setSuccessMsg('Data Kendaraan berhasil diimpor!');
+          fetchData('vehicles');
+          setTimeout(() => setSuccessMsg(''), 5000);
+        } catch (err) {
+          setErrorMsg(`Gagal mengimpor data kendaraan: ${getErrorMessage(err)}`);
+        } finally {
+          setLoading(false);
+          if (vehicleFileInputRef.current) vehicleFileInputRef.current.value = '';
+        }
+      },
+      error: (error) => {
+        setErrorMsg(`Gagal membaca CSV: ${error.message}`);
+        if (vehicleFileInputRef.current) vehicleFileInputRef.current.value = '';
+      }
+    });
+  };
+
+  const downloadVehicleTemplate = () => {
+    const templateData = [{ nomor_polisi: "DD 1234 XX", merek_type: "Toyota Kijang", jenis_kendaraan: "Minibus", nama_sopir: "Budi" }];
+    const csvString = Papa.unparse(templateData);
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Template_Import_Kendaraan.csv";
+    link.click();
   };
 
   // Signatory
@@ -622,7 +672,13 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       onChange={(e) => setVehicleSearchQuery(e.target.value)}
                     />
                   </div>
-                  <button onClick={() => openModal('vehicle')} className={`${btnClass} whitespace-nowrap`}>+ Tambah Kendaraan</button>
+                  <div className="flex gap-2 items-center w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
+                    <button onClick={downloadVehicleTemplate} className="text-blue-600 hover:text-blue-800 text-xs font-semibold underline px-2">Template CSV</button>
+                    <button onClick={handleExportVehicleCSV} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">📥 Export CSV</button>
+                    <button onClick={() => vehicleFileInputRef.current?.click()} className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm font-medium border border-blue-200">📤 Import CSV</button>
+                    <input type="file" accept=".csv" className="hidden" ref={vehicleFileInputRef} onChange={handleImportVehicleFile} />
+                    <button onClick={() => openModal('vehicle')} className={`${btnClass} whitespace-nowrap`}>+ Tambah Kendaraan</button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-600">
