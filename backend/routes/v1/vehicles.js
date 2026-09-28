@@ -1,11 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../../models/Vehicle');
+const { Op } = require('sequelize');
 
 // GET all vehicles
 router.get('/', async (req, res) => {
   try {
-    const vehicles = await Vehicle.findAll();
+    const { search } = req.query;
+    let whereClause = {};
+
+    if (search) {
+      whereClause = {
+        [Op.or]: [
+          { nomor_polisi: { [Op.like]: `%${search}%` } },
+          { merek_type: { [Op.like]: `%${search}%` } },
+          { nama_sopir: { [Op.like]: `%${search}%` } }
+        ]
+      };
+    }
+
+    const vehicles = await Vehicle.findAll({ where: whereClause });
     res.json(vehicles);
   } catch (error) {
     res.status(500).json({ error: error.message });

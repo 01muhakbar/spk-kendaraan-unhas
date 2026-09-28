@@ -17,6 +17,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   
   // Search and filter states
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   
   // Settings State
@@ -75,6 +76,15 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   }, [activeTab]);
 
   useEffect(() => {
+    if (activeTab === 'vehicles') {
+      const delayDebounceFn = setTimeout(() => {
+        fetchData('vehicles');
+      }, 500);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [vehicleSearchQuery]);
+
+  useEffect(() => {
     if (!logoFile) {
       setLogoPreview(savedLogoUrl);
       return;
@@ -95,7 +105,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         if (request !== loadRequest.current) return;
         setSpks(res.data);
       } else if (tab === 'vehicles') {
-        const res = await axios.get(`${API}/vehicles`);
+        const res = await axios.get(`${API}/vehicles`, { params: { search: vehicleSearchQuery } });
         if (request !== loadRequest.current) return;
         setVehicles(res.data);
       } else if (tab === 'signatories') {
@@ -504,9 +514,18 @@ const MasterDashboard = ({ onSettingsSaved }) => {
             {/* TAB: VEHICLES */}
             {activeTab === 'vehicles' && (
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Data Kendaraan Dinas</h2>
-                  <button onClick={() => openModal('vehicle')} className={btnClass}>+ Tambah Kendaraan</button>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                    <h2 className="text-xl font-bold">Data Kendaraan Dinas</h2>
+                    <input
+                      type="text"
+                      placeholder="Cari Nopol, Merek, atau Sopir..."
+                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={vehicleSearchQuery}
+                      onChange={(e) => setVehicleSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <button onClick={() => openModal('vehicle')} className={`${btnClass} whitespace-nowrap`}>+ Tambah Kendaraan</button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-600">

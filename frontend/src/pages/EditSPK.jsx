@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Select from 'react-select';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -156,6 +157,11 @@ const EditSPK = () => {
 
   const selectedKendaraan = kendaraans.find(k => k.id.toString() === formData.kendaraanId);
 
+  const vehicleOptions = kendaraans.map(k => ({
+    value: k.id,
+    label: `${k.nomor_polisi} - ${k.merek_type}`
+  }));
+
   // Handlers: Daftar Kerusakan
   const handleKerusakanChange = (i, val) => {
     const newDaftar = [...formData.daftarKerusakan];
@@ -287,12 +293,17 @@ const EditSPK = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className={labelClass}>Nomor Polisi <span className="text-red-500">*</span></label>
-              <select className={inputClass} value={formData.kendaraanId} onChange={e => setFormData({ ...formData, kendaraanId: e.target.value })} required>
-                <option value="">-- Pilih No. Polisi --</option>
-                {kendaraans.map(k => (
-                  <option key={k.id} value={k.id}>{k.nomor_polisi} — {k.merek_type}</option>
-                ))}
-              </select>
+              <Select 
+                options={vehicleOptions}
+                value={vehicleOptions.find(opt => opt.value.toString() === formData.kendaraanId) || null}
+                onChange={selected => setFormData({ ...formData, kendaraanId: selected ? selected.value.toString() : '' })}
+                placeholder="-- Cari/Pilih No. Polisi --"
+                isClearable
+                styles={{ 
+                  control: (base) => ({ ...base, minHeight: '42px', borderRadius: '0.375rem', borderColor: '#d1d5db' })
+                }}
+                required={true}
+              />
             </div>
             <div>
               <label className={labelClass}>Tanggal Laporan <span className="text-red-500">*</span></label>
