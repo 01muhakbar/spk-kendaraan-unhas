@@ -540,12 +540,12 @@ const PrintSPK = () => {
             </thead>
             <tbody>
               {spk.tabelPekerjaanType === 'Manual' ? (
-                Array.from({length: 8}).map((_, i) => (
-                  <tr key={i} style={{ height: '24px' }}>
-                    <td className="border border-black p-1.5"></td>
-                    <td className="border border-black p-1.5"></td>
-                    <td className="border border-black p-1.5"></td>
-                    <td className="border border-black p-1.5"></td>
+                Array.from({ length: 11 }).map((_, index) => (
+                  <tr key={index} className="border-b border-black h-8 text-sm">
+                    <td className="border border-black p-2 text-center">{index + 1}</td>
+                    <td className="border border-black p-2"></td>
+                    <td className="border border-black p-2"></td>
+                    <td className="border border-black p-2"></td>
                   </tr>
                 ))
               ) : tabelPekerjaan.length > 0 ? tabelPekerjaan.map((row, i) => (
@@ -566,7 +566,7 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <div className="mt-6 pt-4 border-t border-gray-400 break-inside-avoid">
+          <div className="mt-auto pt-4 border-t border-gray-400 break-inside-avoid">
             <div className="grid grid-cols-2 gap-8 mb-4">
               <div className="text-center">
                 <p className="text-xs">Yang Menerima,</p>
