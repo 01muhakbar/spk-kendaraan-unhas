@@ -5,6 +5,7 @@ const Vehicle = require('../../models/Vehicle');
 const VendorMaster = require('../../models/VendorMaster');
 const sequelize = require('../../config/database');
 const { Op } = require('sequelize');
+const { z } = require('zod');
 
 if (!SPK || !Vehicle || !VendorMaster) {
   console.error('CRITICAL: One or more models are undefined upon import in spk.js');
@@ -106,6 +107,50 @@ router.post('/', async (req, res) => {
     res.status(201).json(newSPK);
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// POST - import SPK
+router.post('/import', async (req, res) => {
+  try {
+    const importSchema = z.array(z.object({
+      nomorSPK: z.string().min(1, "Nomor SPK wajib diisi"),
+      vehicleId: z.string().uuid("Vehicle ID harus UUID valid"),
+      vendorId: z.string().uuid("Vendor ID harus UUID valid"),
+      tanggalLaporan: z.string().min(1, "Tanggal Laporan wajib diisi"),
+    }).passthrough());
+    
+    // Validasi data masuk dengan Zod
+    const validDataArray = importSchema.parse(req.body);
+    
+    // Logika Upsert
+    await SPK.bulkCreate(validDataArray, {
+      updateOnDuplicate: [
+        "nomorUrut",
+        "tanggalLaporan", 
+        "daftarKerusakan",
+        "tabelPengecekan",
+        "tanggalPengecekan", 
+        "tanggalPersetujuan", 
+        "tabelPekerjaan",
+        "masaGaransi",
+        "tanggalMasukBengkel", 
+        "status", 
+        "penerimaType",
+        "pelaporType",
+        "tabelPekerjaanType",
+        "vehicleId", 
+        "vendorId", 
+        "updatedAt"
+      ] 
+    });
+    
+    res.status(200).json({ message: "Data berhasil diimpor" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validasi gagal: Data tidak sesuai format', details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
   }
 });
 

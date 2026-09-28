@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Papa from 'papaparse';
 import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchLembar } from '../settings';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
@@ -69,6 +70,8 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   const [vehicleForm, setVehicleForm] = useState({ nomor_polisi: '', merek_type: '', jenis_kendaraan: '', nama_sopir: '' });
   const [signatoryForm, setSignatoryForm] = useState({ nama_lengkap: '', nip_nik: '', jabatan: '', kategori_peran: 'TEKNISI' });
   const [vendorForm, setVendorForm] = useState({ nama_bengkel: '', alamat_kontak: '' });
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchData(activeTab);
@@ -232,6 +235,94 @@ const MasterDashboard = ({ onSettingsSaved }) => {
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
       setErrorMsg(`Gagal mengubah status: ${getErrorMessage(err)}`);
+    }
+  };
+
+  const handleExportJSON = (dataToExport) => {
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Riwayat_SPK_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+  };
+
+  const handleExportCSV = (dataToExport) => {
+    const flattenedData = dataToExport.map(item => ({
+      ...item,
+      daftarKerusakan: typeof item.daftarKerusakan === 'string' ? item.daftarKerusakan : JSON.stringify(item.daftarKerusakan),
+      tabelPengecekan: typeof item.tabelPengecekan === 'string' ? item.tabelPengecekan : JSON.stringify(item.tabelPengecekan),
+      tabelPekerjaan: typeof item.tabelPekerjaan === 'string' ? item.tabelPekerjaan : JSON.stringify(item.tabelPekerjaan),
+      vehicle: undefined,
+      vendor: undefined,
+    }));
+    
+    const csvString = Papa.unparse(flattenedData);
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Riwayat_SPK_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    const processData = async (parsedData) => {
+      try {
+        setLoading(true);
+        await axios.post(`${API}/spk/import`, parsedData);
+        setSuccessMsg('Data SPK berhasil diimpor!');
+        fetchData('spk');
+        setTimeout(() => setSuccessMsg(''), 5000);
+      } catch (err) {
+        setErrorMsg(`Gagal mengimpor data: ${getErrorMessage(err)}`);
+      } finally {
+        setLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+
+    if (extension === 'json') {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsedData = JSON.parse(event.target.result);
+          processData(parsedData);
+        } catch (error) {
+          setErrorMsg('File JSON tidak valid.');
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      };
+      reader.readAsText(file);
+    } else if (extension === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const data = results.data.map(row => {
+            try {
+              if (row.daftarKerusakan) row.daftarKerusakan = JSON.parse(row.daftarKerusakan);
+              if (row.tabelPengecekan) row.tabelPengecekan = JSON.parse(row.tabelPengecekan);
+              if (row.tabelPekerjaan) row.tabelPekerjaan = JSON.parse(row.tabelPekerjaan);
+            } catch(err) {}
+            return row;
+          });
+          processData(data);
+        },
+        error: (error) => {
+          setErrorMsg(`Gagal membaca CSV: ${error.message}`);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      });
+    } else {
+      setErrorMsg('Format file tidak didukung. Gunakan .json atau .csv');
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -440,11 +531,17 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 <div>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                     <h2 className="text-xl font-bold">Riwayat SPK Terbaru</h2>
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        <button onClick={() => handleExportJSON(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export JSON</button>
+                        <button onClick={() => handleExportCSV(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export CSV</button>
+                        <button onClick={() => fileInputRef.current?.click()} className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm font-medium border border-blue-200">Import Data</button>
+                        <input type="file" accept=".csv, .json" className="hidden" ref={fileInputRef} onChange={handleImportFile} />
+                      </div>
                       <input 
                         type="text" 
                         placeholder="Cari No. SPK atau Plat..." 
-                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchKeyword}
                         onChange={(e) => setSearchKeyword(e.target.value)}
                       />
