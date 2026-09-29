@@ -6,6 +6,11 @@ import Select from 'react-select';
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
 
+const capitalizeEachWord = (str) => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+};
+
 // Komponen untuk satu baris tabel pengecekan (Lembar 3)
 const RowPengecekan = ({ row, index, onChange, onRemove }) => (
   <tr className="border-b border-gray-200">
@@ -159,7 +164,7 @@ const EditSPK = () => {
 
   const vehicleOptions = kendaraans.map(k => ({
     value: k.id,
-    label: `${k.nomor_polisi} - ${k.merek_type}`
+    label: `${(k.nomor_polisi || '').toUpperCase()} - ${capitalizeEachWord(k.merek_type)}`
   }));
 
   // Handlers: Daftar Kerusakan
@@ -311,15 +316,15 @@ const EditSPK = () => {
             </div>
             <div>
               <label className={labelClass}>Merek / Type <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
-              <input type="text" readOnly className={readonlyClass} value={selectedKendaraan?.merek_type || '—'} />
+              <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.merek_type?.toLowerCase() || '—'} />
             </div>
             <div>
               <label className={labelClass}>Jenis Kendaraan <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
-              <input type="text" readOnly className={readonlyClass} value={selectedKendaraan?.jenis_kendaraan || '—'} />
+              <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.jenis_kendaraan?.toLowerCase() || '—'} />
             </div>
             <div className="md:col-span-2">
               <label className={labelClass}>Nama Sopir / Pengguna <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
-              <input type="text" readOnly className={readonlyClass} value={selectedKendaraan?.nama_sopir || '—'} />
+              <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.nama_sopir?.toLowerCase() || '—'} />
             </div>
           </div>
         </div>
