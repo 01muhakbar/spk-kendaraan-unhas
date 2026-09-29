@@ -566,12 +566,12 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <div className="mt-auto pt-3 border-t border-gray-400 break-inside-avoid">
-            <div className="grid grid-cols-2 gap-8 mb-2">
+          <div className="mt-8 pt-4 border-t border-gray-400 break-inside-avoid">
+            <div className="grid grid-cols-2 gap-8 mb-4">
               <div className="text-center">
                 <p className="text-xs">Yang Menerima,</p>
                 <p className="text-xs font-semibold">Sopir / Pengguna</p>
-                <div style={{ height: '40px' }}></div>
+                <div style={{ height: '50px' }}></div>
                 {spk.penerimaType === 'Manual' ? (
                   <p className="text-xs">(.........................................)</p>
                 ) : (
@@ -581,7 +581,7 @@ const PrintSPK = () => {
               <div className="text-center">
                 <p className="text-xs">Yang Menyerahkan,</p>
                 <p className="text-xs font-semibold">Pihak Bengkel</p>
-                <div style={{ height: '40px' }}></div>
+                <div style={{ height: '50px' }}></div>
                 <p className="text-xs">(.........................................)</p>
                 <p className="font-bold text-xs mt-1">{vendor?.nama_bengkel || '___________________'}</p>
               </div>
@@ -614,7 +614,8 @@ const PrintSPK = () => {
               <div className="w-1/2 text-center">
                 <p className="font-semibold text-xs mb-1">Mengetahui:</p>
                 <p className="text-xs">Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
-                <div className="mt-6">
+                <div style={{ height: '60px' }}></div>
+                <div>
                   <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                   <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
                 </div>
