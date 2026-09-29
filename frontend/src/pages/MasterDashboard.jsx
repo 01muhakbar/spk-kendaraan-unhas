@@ -694,10 +694,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <tbody>
                       {vehicles.map(v => (
                         <tr key={v.id} className="border-b hover:bg-gray-50">
-                          <td className="p-3 font-bold">{v.nomor_polisi}</td>
-                          <td className="p-3">{v.merek_type}</td>
-                          <td className="p-3 hidden md:table-cell">{v.jenis_kendaraan}</td>
-                          <td className="p-3">{v.nama_sopir}</td>
+                          <td className="p-3 font-bold uppercase">{v.nomor_polisi}</td>
+                          <td className="p-3 capitalize">{v.merek_type?.toLowerCase()}</td>
+                          <td className="p-3 hidden md:table-cell capitalize">{v.jenis_kendaraan?.toLowerCase()}</td>
+                          <td className="p-3 capitalize">{v.nama_sopir?.toLowerCase()}</td>
                           <td className="p-3 text-center space-x-4">
                             <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors" title="Edit">✏️</button>
                             <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors" title="Hapus">🗑️</button>
