@@ -37,8 +37,20 @@ app.get('/api/v1/force-sync', async (req, res) => {
     require('./models/SPK');
     const sequelize = require('./config/database');
     
+    try {
+      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX nomor_polisi');
+    } catch (e) {}
+    
+    try {
+      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX nomor_polisi_unique');
+    } catch (e) {}
+    
+    try {
+      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX master_vehicles_nomor_polisi_unique');
+    } catch (e) {}
+    
     await sequelize.sync({ alter: true });
-    res.json({ message: 'Database tables synchronized successfully!' });
+    res.json({ message: 'Database tables synchronized successfully! Unique constraints on vehicles removed.' });
   } catch (err) {
     res.status(500).json({ error: 'Database sync failed: ' + err.message, stack: err.stack });
   }
