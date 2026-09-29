@@ -38,21 +38,30 @@ app.get('/api/v1/force-sync', async (req, res) => {
     const sequelize = require('./config/database');
     
     try {
-      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX nomor_polisi');
-    } catch (e) {}
-    
-    try {
-      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX nomor_polisi_unique');
-    } catch (e) {}
-    
-    try {
-      await sequelize.query('ALTER TABLE master_vehicles DROP INDEX master_vehicles_nomor_polisi_unique');
-    } catch (e) {}
+      const [indexes] = await sequelize.query("SHOW INDEX FROM master_vehicles WHERE Column_name = 'nomor_polisi' AND Non_unique = 0");
+      for (const idx of indexes) {
+        if (idx.Key_name !== 'PRIMARY') {
+          await sequelize.query(`ALTER TABLE master_vehicles DROP INDEX ${idx.Key_name}`);
+        }
+      }
+    } catch (e) {
+      console.log('Error dropping index dynamically:', e.message);
+    }
     
     await sequelize.sync({ alter: true });
     res.json({ message: 'Database tables synchronized successfully! Unique constraints on vehicles removed.' });
   } catch (err) {
     res.status(500).json({ error: 'Database sync failed: ' + err.message, stack: err.stack });
+  }
+});
+
+app.get('/api/v1/db-indexes', async (req, res) => {
+  try {
+    const sequelize = require('./config/database');
+    const [results] = await sequelize.query('SHOW INDEX FROM master_vehicles');
+    res.json({ indexes: results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
