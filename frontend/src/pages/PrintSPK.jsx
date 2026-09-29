@@ -541,11 +541,11 @@ const PrintSPK = () => {
             <tbody>
               {spk.tabelPekerjaanType === 'Manual' ? (
                 Array.from({ length: 11 }).map((_, index) => (
-                  <tr key={index} className="border-b border-black h-8 text-sm">
-                    <td className="border border-black p-2 text-center">{index + 1}</td>
-                    <td className="border border-black p-2"></td>
-                    <td className="border border-black p-2"></td>
-                    <td className="border border-black p-2"></td>
+                  <tr key={index} className="border-b border-black h-5 text-xs">
+                    <td className="border border-black p-1 text-center">{index + 1}</td>
+                    <td className="border border-black p-1"></td>
+                    <td className="border border-black p-1"></td>
+                    <td className="border border-black p-1"></td>
                   </tr>
                 ))
               ) : tabelPekerjaan.length > 0 ? tabelPekerjaan.map((row, i) => (
@@ -566,12 +566,12 @@ const PrintSPK = () => {
             </tbody>
           </table>
 
-          <div className="mt-auto pt-4 border-t border-gray-400 break-inside-avoid">
-            <div className="grid grid-cols-2 gap-8 mb-4">
+          <div className="mt-auto pt-3 border-t border-gray-400 break-inside-avoid">
+            <div className="grid grid-cols-2 gap-8 mb-2">
               <div className="text-center">
                 <p className="text-xs">Yang Menerima,</p>
                 <p className="text-xs font-semibold">Sopir / Pengguna</p>
-                <div style={{ height: '50px' }}></div>
+                <div style={{ height: '40px' }}></div>
                 {spk.penerimaType === 'Manual' ? (
                   <p className="text-xs">(.........................................)</p>
                 ) : (
@@ -581,18 +581,18 @@ const PrintSPK = () => {
               <div className="text-center">
                 <p className="text-xs">Yang Menyerahkan,</p>
                 <p className="text-xs font-semibold">Pihak Bengkel</p>
-                <div style={{ height: '50px' }}></div>
+                <div style={{ height: '40px' }}></div>
                 <p className="text-xs">(.........................................)</p>
                 <p className="font-bold text-xs mt-1">{vendor?.nama_bengkel || '___________________'}</p>
               </div>
             </div>
             
-            <div className="mt-6 flex justify-between text-left">
+            <div className="mt-3 flex justify-between text-left">
               
               {/* Kolom Kiri: Tim Teknisi Unhas */}
               <div className="w-1/2 pr-4">
-                <p className="font-semibold mb-4">Tim Teknisi Unhas</p>
-                <div className="flex flex-col gap-4">
+                <p className="font-semibold text-xs mb-2">Tim Teknisi Unhas</p>
+                <div className="flex flex-col gap-2">
                   <div className="flex items-start">
                     <div className="w-40">
                       <p className="font-bold text-xs">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
@@ -613,8 +613,8 @@ const PrintSPK = () => {
               {/* Kolom Kanan: Mengetahui & Kepala Subdit */}
               <div className="w-1/2 text-center">
                 <p className="font-semibold text-xs mb-1">Mengetahui:</p>
-                <p>Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
-                <div className="mt-10">
+                <p className="text-xs">Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
+                <div className="mt-6">
                   <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                   <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
                 </div>
