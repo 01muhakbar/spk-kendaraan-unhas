@@ -9,8 +9,7 @@ const Vehicle = sequelize.define('Vehicle', {
   },
   nomor_polisi: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   merek_type: {
     type: DataTypes.STRING,

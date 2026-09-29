@@ -7,7 +7,7 @@ const SystemSetting = require('./SystemSetting');
 
 // Register every model before schema preparation or request handling.
 const syncDatabase = async () => {
-  await sequelize.sync();
+  await sequelize.sync({ alter: true });
 };
 
 module.exports.sequelize = sequelize;
