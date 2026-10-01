@@ -393,15 +393,15 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="w-full mb-6 text-xs border-b border-r border-black border-separate border-spacing-0">
             <thead>
-              <tr className="bg-gray-100">
-                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-center w-8">No.</th>
-                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-left">Komponen Yang Rusak</th>
-                <th colSpan="2" className="border-t border-l border-black p-1.5 text-center w-40">Rekomendasi Hasil Pemeriksaan</th>
-                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-left w-40">Keterangan</th>
+              <tr>
+                <th rowSpan="2" className="bg-gray-100 align-middle border-t border-l border-black p-1.5 text-center w-8 bg-clip-padding">No.</th>
+                <th rowSpan="2" className="bg-gray-100 align-middle border-t border-l border-black p-1.5 text-left bg-clip-padding">Komponen Yang Dicek</th>
+                <th colSpan="2" className="bg-gray-100 align-middle border-t border-l border-black p-1.5 text-center w-40 bg-clip-padding">Rekomendasi Hasil Pemeriksaan</th>
+                <th rowSpan="2" className="bg-gray-100 align-middle border-t border-l border-black p-1.5 text-left w-40 bg-clip-padding">Keterangan</th>
               </tr>
-              <tr className="bg-gray-100">
-                <th className="border-t border-l border-black p-1.5 text-center w-20">Perbaikan</th>
-                <th className="border-t border-l border-black p-1.5 text-center w-20">Penggantian</th>
+              <tr>
+                <th className="bg-gray-100 border-t border-l border-black p-1.5 text-center w-20 bg-clip-padding">Perbaikan</th>
+                <th className="bg-gray-100 border-t border-l border-black p-1.5 text-center w-20 bg-clip-padding">Penggantian</th>
               </tr>
             </thead>
             <tbody>
