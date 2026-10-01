@@ -281,6 +281,35 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     link.click();
   };
 
+  const downloadSpkTemplate = () => {
+    const templateData = [{
+      nomorSPK: "001/RT/P-Kend/2026",
+      tanggalLaporan: "2026-01-01",
+      tanggalPengecekan: "2026-01-02",
+      tanggalPersetujuan: "2026-01-02",
+      tanggalMasukBengkel: "2026-01-03",
+      vehicleId: "Masukkan UUID Kendaraan disini",
+      vendorId: "Masukkan UUID Bengkel disini",
+      signatoryPejabatId: "Masukkan UUID Pejabat disini",
+      signatoryTeknisiId: "Masukkan UUID Teknisi disini",
+      status: "DRAFT",
+      masaGaransi: "1 Bulan",
+      penerimaType: "Otomatis",
+      pelaporType: "Otomatis",
+      tabelPekerjaanType: "Otomatis",
+      daftarKerusakan: '["Ganti oli", "Service rutin"]',
+      tabelPengecekan: '[{"komponenRusak": "Mesin", "rekomendasi": "Perbaikan", "keterangan": "-"}]',
+      tabelPekerjaan: '[{"jenisPekerjaan": "Ganti Oli", "satuan": "Liter", "kuantitas": "2"}]'
+    }];
+    const csvString = Papa.unparse(templateData);
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Template_Import_SPK.csv";
+    link.click();
+  };
+
   const handleBulkDownload = async () => {
     setIsDownloading(true);
     setDownloadProgress({ current: 0, total: selectedSpkIds.length });
@@ -721,6 +750,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <h2 className="text-xl font-bold">Riwayat SPK Terbaru</h2>
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
                       <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        <button onClick={downloadSpkTemplate} className="text-blue-600 hover:text-blue-800 text-xs font-semibold underline px-2">Template CSV</button>
                         <button onClick={() => handleExportJSON(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export JSON</button>
                         <button onClick={() => handleExportCSV(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export CSV</button>
                         <button onClick={() => fileInputRef.current?.click()} className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm font-medium border border-blue-200">Import Data</button>
