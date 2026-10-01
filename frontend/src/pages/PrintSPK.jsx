@@ -391,43 +391,41 @@ const PrintSPK = ({ onReady }) => {
             </tbody>
           </table>
 
-          <div className="border border-black mb-6">
-            <table className="w-full border-collapse text-xs" style={{ borderStyle: 'hidden' }}>
-              <thead>
-                <tr className="bg-gray-100">
-                  <th rowSpan="2" className="border border-black p-1.5 text-center w-8">No.</th>
-                  <th rowSpan="2" className="border border-black p-1.5 text-left">Komponen Yang Rusak</th>
-                  <th colSpan="2" className="border border-black p-1.5 text-center w-40">Rekomendasi Hasil Pemeriksaan</th>
-                  <th rowSpan="2" className="border border-black p-1.5 text-left w-40">Keterangan</th>
+          <table className="w-full mb-6 text-xs border-b border-r border-black border-separate border-spacing-0">
+            <thead>
+              <tr className="bg-gray-100">
+                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-center w-8">No.</th>
+                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-left">Komponen Yang Rusak</th>
+                <th colSpan="2" className="border-t border-l border-black p-1.5 text-center w-40">Rekomendasi Hasil Pemeriksaan</th>
+                <th rowSpan="2" className="border-t border-l border-black p-1.5 text-left w-40">Keterangan</th>
+              </tr>
+              <tr className="bg-gray-100">
+                <th className="border-t border-l border-black p-1.5 text-center w-20">Perbaikan</th>
+                <th className="border-t border-l border-black p-1.5 text-center w-20">Penggantian</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tabelPengecekan.length > 0 ? tabelPengecekan.map((row, i) => (
+                <tr key={i}>
+                  <td className="border-t border-l border-black p-1.5 text-center">{i + 1}</td>
+                  <td className="border-t border-l border-black p-1.5">{row.komponenRusak}</td>
+                  <td className="border-t border-l border-black p-1.5 text-center">{row.rekomendasi === 'Perbaikan' ? '✓' : ''}</td>
+                  <td className="border-t border-l border-black p-1.5 text-center">{row.rekomendasi === 'Penggantian' ? '✓' : ''}</td>
+                  <td className="border-t border-l border-black p-1.5">{row.keterangan}</td>
                 </tr>
-                <tr className="bg-gray-100">
-                  <th className="border border-black p-1.5 text-center w-20">Perbaikan</th>
-                  <th className="border border-black p-1.5 text-center w-20">Penggantian</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tabelPengecekan.length > 0 ? tabelPengecekan.map((row, i) => (
-                  <tr key={i}>
-                    <td className="border border-black p-1.5 text-center">{i + 1}</td>
-                    <td className="border border-black p-1.5">{row.komponenRusak}</td>
-                    <td className="border border-black p-1.5 text-center">{row.rekomendasi === 'Perbaikan' ? '✓' : ''}</td>
-                    <td className="border border-black p-1.5 text-center">{row.rekomendasi === 'Penggantian' ? '✓' : ''}</td>
-                    <td className="border border-black p-1.5">{row.keterangan}</td>
+              )) : (
+                Array.from({length: 5}).map((_, i) => (
+                  <tr key={i} style={{ height: '22px' }}>
+                    <td className="border-t border-l border-black p-1 text-center text-gray-400">{i+1}</td>
+                    <td className="border-t border-l border-black p-1"></td>
+                    <td className="border-t border-l border-black p-1"></td>
+                    <td className="border-t border-l border-black p-1"></td>
+                    <td className="border-t border-l border-black p-1"></td>
                   </tr>
-                )) : (
-                  Array.from({length: 5}).map((_, i) => (
-                    <tr key={i} style={{ height: '22px' }}>
-                      <td className="border border-black p-1 text-center text-gray-400">{i+1}</td>
-                      <td className="border border-black p-1"></td>
-                      <td className="border border-black p-1"></td>
-                      <td className="border border-black p-1"></td>
-                      <td className="border border-black p-1"></td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
 
           <div className="mt-12 pt-8 break-inside-avoid">
             <p className="mb-8 whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR3_PENUTUP) || 'Demikian hasil pengecekan ini kami laporkan untuk dapat ditindaklanjuti.'}</p>
@@ -540,44 +538,42 @@ const PrintSPK = ({ onReady }) => {
           </table>
 
           <p className="mb-1 font-semibold">Tabel Pekerjaan:</p>
-          <div className="border border-black mb-4">
-            <table className="w-full border-collapse text-xs" style={{ borderStyle: 'hidden' }}>
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-black p-1.5 text-center w-8">No.</th>
-                  <th className="border border-black p-1.5 text-left">Jenis Pekerjaan & Spesifikasi</th>
-                  <th className="border border-black p-1.5 text-center w-20">Satuan</th>
-                  <th className="border border-black p-1.5 text-center w-20">Kuantitas</th>
+          <table className="w-full mb-4 text-xs border-b border-r border-black border-separate border-spacing-0">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border-t border-l border-black p-1.5 text-center w-8">No.</th>
+                <th className="border-t border-l border-black p-1.5 text-left">Jenis Pekerjaan & Spesifikasi</th>
+                <th className="border-t border-l border-black p-1.5 text-center w-20">Satuan</th>
+                <th className="border-t border-l border-black p-1.5 text-center w-20">Kuantitas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {spk.tabelPekerjaanType === 'Manual' ? (
+                Array.from({ length: 11 }).map((_, index) => (
+                  <tr key={index} className="h-8 text-sm">
+                    <td className="border-t border-l border-black p-1 text-center">{index + 1}</td>
+                    <td className="border-t border-l border-black p-1"></td>
+                    <td className="border-t border-l border-black p-1"></td>
+                    <td className="border-t border-l border-black p-1"></td>
+                  </tr>
+                ))
+              ) : tabelPekerjaan.length > 0 ? tabelPekerjaan.map((row, i) => (
+                <tr key={i}>
+                  <td className="border-t border-l border-black p-1.5 text-center">{i + 1}</td>
+                  <td className="border-t border-l border-black p-1.5">{row.jenisPekerjaan}</td>
+                  <td className="border-t border-l border-black p-1.5 text-center">{row.satuan}</td>
+                  <td className="border-t border-l border-black p-1.5 text-center">{row.kuantitas}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {spk.tabelPekerjaanType === 'Manual' ? (
-                  Array.from({ length: 11 }).map((_, index) => (
-                    <tr key={index} className="border-b border-black h-8 text-sm">
-                      <td className="border border-black p-1 text-center">{index + 1}</td>
-                      <td className="border border-black p-1"></td>
-                      <td className="border border-black p-1"></td>
-                      <td className="border border-black p-1"></td>
-                    </tr>
-                  ))
-                ) : tabelPekerjaan.length > 0 ? tabelPekerjaan.map((row, i) => (
-                  <tr key={i}>
-                    <td className="border border-black p-1.5 text-center">{i + 1}</td>
-                    <td className="border border-black p-1.5">{row.jenisPekerjaan}</td>
-                    <td className="border border-black p-1.5 text-center">{row.satuan}</td>
-                    <td className="border border-black p-1.5 text-center">{row.kuantitas}</td>
-                  </tr>
-                )) : Array.from({length: 4}).map((_, i) => (
-                  <tr key={i} style={{ height: '22px' }}>
-                    <td className="border border-black p-1 text-center text-gray-400">{i+1}</td>
-                    <td className="border border-black p-1"></td>
-                    <td className="border border-black p-1"></td>
-                    <td className="border border-black p-1"></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              )) : Array.from({length: 4}).map((_, i) => (
+                <tr key={i} style={{ height: '22px' }}>
+                  <td className="border-t border-l border-black p-1 text-center text-gray-400">{i+1}</td>
+                  <td className="border-t border-l border-black p-1"></td>
+                  <td className="border-t border-l border-black p-1"></td>
+                  <td className="border-t border-l border-black p-1"></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
           <div className="mt-8 pt-4 border-t border-gray-400 break-inside-avoid">
             <div className="grid grid-cols-2 gap-8 mb-4">
