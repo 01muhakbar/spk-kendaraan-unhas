@@ -194,11 +194,26 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE — hapus SPK
+// DELETE — hapus SPK secara permanen (hard delete) agar nomor SPK bisa digunakan kembali
 router.delete('/:id', async (req, res) => {
   try {
-    await SPK.destroy({ where: { id: req.params.id } });
+    await SPK.destroy({ where: { id: req.params.id }, force: true });
     res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ROUTE DARURAT: Membersihkan SPK yang terlanjur di-soft-delete sebelumnya
+router.get('/force-cleanup/now', async (req, res) => {
+  try {
+    const { Op } = require('sequelize');
+    const count = await SPK.destroy({ 
+      where: { deletedAt: { [Op.ne]: null } }, 
+      force: true,
+      paranoid: false
+    });
+    res.json({ message: `Berhasil membersihkan ${count} SPK yang menyangkut di database!` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
