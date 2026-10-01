@@ -5,6 +5,8 @@ import axios from 'axios';
 import Papa from 'papaparse';
 import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchLembar } from '../settings';
 import PrintSPK from './PrintSPK';
+import JSZip from 'jszip';
+import html2pdf from 'html2pdf.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -278,8 +280,6 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     setIsDownloading(true);
     setDownloadProgress({ current: 0, total: selectedSpkIds.length });
     try {
-      const JSZip = (await import('jszip')).default;
-      const html2pdf = (await import('html2pdf.js')).default;
       const zip = new JSZip();
 
       for (let i = 0; i < selectedSpkIds.length; i++) {
