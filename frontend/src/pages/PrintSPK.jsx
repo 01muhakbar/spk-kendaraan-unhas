@@ -228,10 +228,11 @@ const PrintSPK = () => {
   const pageClass = "bg-white text-black shadow-md mx-auto border border-gray-300 print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-xs w-[210mm] h-[297mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col";
 
   const isAutoDownload = new URLSearchParams(location.search).get('autoDownload') === 'true';
+  const isHeadless = new URLSearchParams(location.search).get('headless') === 'true';
 
   return (
-    <div className={`min-h-screen pb-16 print:bg-white print:p-0 print:pb-0 ${isAutoDownload ? 'bg-white' : 'bg-gray-200'}`}>
-      {!isAutoDownload && (
+    <div className={`min-h-screen pb-16 print:bg-white print:p-0 print:pb-0 ${(isAutoDownload || isHeadless) ? 'bg-white' : 'bg-gray-200'}`}>
+      {!(isAutoDownload || isHeadless) && (
         <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center print:hidden sticky top-0 z-10 shadow-sm">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Pratinjau Dokumen SPK</h2>
@@ -260,7 +261,7 @@ const PrintSPK = () => {
         </div>
       )}
 
-      <div id="print-container" className={`flex flex-col items-center print:gap-0 print:py-0 ${isAutoDownload ? 'gap-0 py-0' : 'gap-8 py-8'}`}>
+      <div id="print-container" className={`flex flex-col items-center print:gap-0 print:py-0 ${(isAutoDownload || isHeadless) ? 'gap-0 py-0' : 'gap-8 py-8'}`}>
         {/* LEMBAR 1 */}
         <div className={pageClass}>
           <KopSurat logoUrl={logoUrl} settings={kopSettings} />

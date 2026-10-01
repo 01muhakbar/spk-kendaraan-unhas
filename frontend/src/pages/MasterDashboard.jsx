@@ -16,10 +16,14 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   const [vendors, setVendors] = useState([]);
   const [spks, setSpks] = useState([]);
   
-  // Search and filter states
   const [searchKeyword, setSearchKeyword] = useState('');
   const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  
+  // Bulk Download States
+  const [selectedSpkIds, setSelectedSpkIds] = useState([]);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   
   // Settings State
   const [logoPreview, setLogoPreview] = useState(null);
@@ -266,6 +270,87 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     link.href = url;
     link.download = `Riwayat_SPK_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+  };
+
+  const handleBulkDownload = async () => {
+    setIsDownloading(true);
+    setDownloadProgress({ current: 0, total: selectedSpkIds.length });
+    try {
+      const JSZip = (await import('jszip')).default;
+      const html2pdf = (await import('html2pdf.js')).default;
+      const zip = new JSZip();
+
+      for (let i = 0; i < selectedSpkIds.length; i++) {
+        const id = selectedSpkIds[i];
+        setDownloadProgress({ current: i + 1, total: selectedSpkIds.length });
+        
+        await new Promise((resolve) => {
+          const iframe = document.createElement('iframe');
+          iframe.style.visibility = 'hidden';
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '210mm';
+          iframe.style.height = '297mm';
+          iframe.style.zIndex = '-1000';
+          
+          iframe.onload = async () => {
+            // Beri waktu bagi React di dalam iframe untuk mengambil data dan merender
+            await new Promise(r => setTimeout(r, 2500));
+            
+            try {
+              const doc = iframe.contentDocument || iframe.contentWindow.document;
+              const element = doc.getElementById('print-container');
+              if (element) {
+                // Sembunyikan elemen navigasi jika ada
+                const spkData = spks.find(s => s.id === id);
+                const spkNum = spkData ? spkData.nomorSPK.replace(/\//g, '-') : id;
+                
+                const opt = {
+                  margin: 0,
+                  filename: `SPK_${spkNum}.pdf`,
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+                zip.file(`SPK_${spkNum}.pdf`, pdfBlob);
+              }
+            } catch (err) {
+              console.error("Gagal merender PDF untuk SPK ID:", id, err);
+            } finally {
+              document.body.removeChild(iframe);
+              resolve();
+            }
+          };
+          
+          // Meminta print route tanpa auto-download/auto-print
+          iframe.src = `/print/${id}?headless=true`;
+          document.body.appendChild(iframe);
+        });
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Batch_SPK_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      link.remove();
+      
+      setSuccessMsg('Berhasil mengunduh batch SPK!');
+      setSelectedSpkIds([]);
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (error) {
+      console.error("Download gagal", error);
+      setErrorMsg("Gagal mengunduh dokumen batch. Silakan coba lagi.");
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress({ current: 0, total: 0 });
+    }
   };
 
   const handleImportFile = (e) => {
@@ -611,6 +696,20 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <table className="w-full text-left text-sm text-gray-600">
                       <thead className="bg-gray-50 text-gray-700 border-b">
                         <tr>
+                          <th className="p-3 text-center w-10">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                              checked={filteredSpks.length > 0 && selectedSpkIds.length === filteredSpks.length}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSpkIds(filteredSpks.map(s => s.id));
+                                } else {
+                                  setSelectedSpkIds([]);
+                                }
+                              }}
+                            />
+                          </th>
                           <th className="p-3 whitespace-nowrap">No. SPK</th>
                           <th className="p-3 whitespace-nowrap hidden md:table-cell">Tanggal Laporan</th>
                           <th className="p-3 whitespace-nowrap">No. Polisi</th>
@@ -622,7 +721,21 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       <tbody>
                         {filteredSpks.length === 0 && <tr><td colSpan="6" className="p-4 text-center">Belum ada data SPK yang sesuai.</td></tr>}
                         {filteredSpks.map(spk => (
-                          <tr key={spk.id} className="border-b hover:bg-gray-50">
+                          <tr key={spk.id} className={`border-b hover:bg-gray-50 ${selectedSpkIds.includes(spk.id) ? 'bg-blue-50/50' : ''}`}>
+                            <td className="p-3 text-center">
+                              <input 
+                                type="checkbox"
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                checked={selectedSpkIds.includes(spk.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSpkIds(prev => [...prev, spk.id]);
+                                  } else {
+                                    setSelectedSpkIds(prev => prev.filter(id => id !== spk.id));
+                                  }
+                                }}
+                              />
+                            </td>
                             <td className="p-3 font-semibold">{spk.nomorSPK}</td>
                             <td className="p-3 hidden md:table-cell">{spk.tanggalLaporan}</td>
                             <td className="p-3">{spk.vehicle?.nomor_polisi}</td>
@@ -1101,6 +1214,32 @@ const MasterDashboard = ({ onSettingsSaved }) => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Floating Action Bar untuk Bulk Download */}
+      {selectedSpkIds.length > 0 && activeTab === 'spk' && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-6 z-50 border border-blue-500 transition-all duration-300">
+          <div className="flex items-center space-x-2">
+            <span className="bg-white text-blue-600 font-bold w-6 h-6 rounded-full flex items-center justify-center text-sm">
+              {selectedSpkIds.length}
+            </span>
+            <span className="font-medium text-sm md:text-base">SPK Terpilih</span>
+          </div>
+          <button 
+            onClick={handleBulkDownload} 
+            disabled={isDownloading}
+            className="bg-white text-blue-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm"
+          >
+            {isDownloading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                Memproses {downloadProgress.current}/{downloadProgress.total}...
+              </>
+            ) : (
+              <>📥 Unduh ZIP</>
+            )}
+          </button>
         </div>
       )}
 
