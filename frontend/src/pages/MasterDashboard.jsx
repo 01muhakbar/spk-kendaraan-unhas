@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { createRoot } from 'react-dom/client';
 import axios from 'axios';
 import Papa from 'papaparse';
 import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchLembar } from '../settings';
+import PrintSPK from './PrintSPK';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 const API = import.meta.env.VITE_API_URL || `${API_BASE}/api/v1`;
@@ -285,49 +287,47 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         setDownloadProgress({ current: i + 1, total: selectedSpkIds.length });
         
         await new Promise((resolve) => {
-          const iframe = document.createElement('iframe');
-          iframe.style.visibility = 'hidden';
-          iframe.style.position = 'fixed';
-          iframe.style.right = '0';
-          iframe.style.bottom = '0';
-          iframe.style.width = '210mm';
-          iframe.style.height = '297mm';
-          iframe.style.zIndex = '-1000';
+          const container = document.createElement('div');
+          container.style.position = 'absolute';
+          container.style.left = '-9999px';
+          container.style.top = '-9999px';
+          container.style.width = '210mm';
+          container.style.zIndex = '-1000';
+          document.body.appendChild(container);
           
-          iframe.onload = async () => {
-            // Beri waktu bagi React di dalam iframe untuk mengambil data dan merender
-            await new Promise(r => setTimeout(r, 2500));
-            
+          const root = createRoot(container);
+          
+          const handleReady = async (element) => {
             try {
-              const doc = iframe.contentDocument || iframe.contentWindow.document;
-              const element = doc.getElementById('print-container');
-              if (element) {
-                // Sembunyikan elemen navigasi jika ada
-                const spkData = spks.find(s => s.id === id);
-                const spkNum = spkData ? spkData.nomorSPK.replace(/\//g, '-') : id;
-                
-                const opt = {
-                  margin: 0,
-                  filename: `SPK_${spkNum}.pdf`,
-                  image: { type: 'jpeg', quality: 0.98 },
-                  html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
-                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-                
-                const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-                zip.file(`SPK_${spkNum}.pdf`, pdfBlob);
-              }
+              const spkData = spks.find(s => s.id === id);
+              const spkNum = spkData ? spkData.nomorSPK.replace(/\//g, '-') : id;
+              
+              const opt = {
+                margin: 0,
+                filename: `SPK_${spkNum}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              };
+              
+              const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+              zip.file(`SPK_${spkNum}.pdf`, pdfBlob);
             } catch (err) {
               console.error("Gagal merender PDF untuk SPK ID:", id, err);
             } finally {
-              document.body.removeChild(iframe);
+              root.unmount();
+              document.body.removeChild(container);
               resolve();
             }
           };
           
-          // Meminta print route tanpa auto-download/auto-print (Gunakan # untuk HashRouter)
-          iframe.src = `/#/print/${id}?headless=true`;
-          document.body.appendChild(iframe);
+          root.render(
+            <MemoryRouter initialEntries={[`/print/${id}?headless=true`]}>
+              <Routes>
+                <Route path="/print/:id" element={<PrintSPK onReady={handleReady} />} />
+              </Routes>
+            </MemoryRouter>
+          );
         });
       }
 

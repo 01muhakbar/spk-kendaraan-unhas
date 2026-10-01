@@ -99,7 +99,7 @@ const TTD = ({ label, nama, nipNik, isNIK = false }) => (
   </div>
 );
 
-const PrintSPK = () => {
+const PrintSPK = ({ onReady }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -164,6 +164,14 @@ const PrintSPK = () => {
         printTimer = setTimeout(() => {
           window.print();
         }, 800);
+      }
+
+      // Panggil callback onReady untuk bulk download jika ada
+      if (onReady) {
+        setTimeout(() => {
+          const el = document.getElementById('print-container');
+          if (el) onReady(el);
+        }, 1000); // Beri sedikit waktu untuk render image/logo
       }
 
       // Cleanup: mengembalikan judul dokumen semula ketika komponen dilepas (unmount)
