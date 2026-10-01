@@ -282,6 +282,37 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     try {
       const zip = new JSZip();
 
+      // [MENDALAM] Persiapkan CSS yang aman dari oklch untuk html2canvas
+      let safeCssText = '';
+      
+      // Kumpulkan CSS dari <style> bawaan
+      document.querySelectorAll('style').forEach(style => {
+        safeCssText += style.innerHTML + '\n';
+      });
+
+      // Kumpulkan CSS dari <link rel="stylesheet"> (File CSS produksi Vite)
+      const links = document.querySelectorAll('link[rel="stylesheet"]');
+      for (const link of links) {
+        try {
+          const res = await fetch(link.href);
+          const css = await res.text();
+          safeCssText += css + '\n';
+        } catch (e) {
+          console.warn("Gagal fetch external CSS:", link.href, e);
+        }
+      }
+
+      // Terapkan Smart Regex Parser untuk mengganti oklch menjadi HEX standar
+      safeCssText = safeCssText
+        .replace(/oklch\(\s*([\d.]+)(%?)[^)]*\)/g, (match, l, pct) => {
+          let lightness = parseFloat(l);
+          if (pct) lightness /= 100;
+          if (lightness > 0.85) return '#f3f4f6'; // Background terang
+          if (lightness > 0.5) return '#9ca3af';  // Border abu-abu
+          return '#111827';                       // Teks gelap
+        })
+        .replace(/color-mix\([^)]+\)/g, 'inherit');
+
       for (let i = 0; i < selectedSpkIds.length; i++) {
         const id = selectedSpkIds[i];
         setDownloadProgress({ current: i + 1, total: selectedSpkIds.length });
@@ -311,21 +342,13 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                   useCORS: true, 
                   windowWidth: 800,
                   onclone: (clonedDoc) => {
-                    // html2canvas tidak mendukung oklch() dan color-mix() dari Tailwind v4
-                    // Kita harus menghapusnya dari stylesheet di dokumen hasil clone
-                    const styles = clonedDoc.querySelectorAll('style');
-                    styles.forEach(style => {
-                      style.innerHTML = style.innerHTML
-                        .replace(/oklch\(\s*([\d.]+)(%?)[^)]*\)/g, (match, l, pct) => {
-                          let lightness = parseFloat(l);
-                          if (pct) lightness /= 100;
-                          // Konversi kecerahan oklch ke Hex RGB standar
-                          if (lightness > 0.85) return '#f3f4f6'; // Terang (Background)
-                          if (lightness > 0.5) return '#9ca3af';  // Sedang (Borders)
-                          return '#111827';                       // Gelap (Teks)
-                        })
-                        .replace(/color-mix\([^)]+\)/g, 'inherit'); // Hapus color-mix
-                    });
+                    // Hapus SEMUA stylesheet asli dari clone agar html2canvas tidak mencoba me-load-nya dan crash
+                    clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => el.remove());
+                    
+                    // Suntikkan CSS buatan kita yang sudah bebas dari oklch dan color-mix
+                    const safeStyle = clonedDoc.createElement('style');
+                    safeStyle.innerHTML = safeCssText;
+                    clonedDoc.head.appendChild(safeStyle);
                   }
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
