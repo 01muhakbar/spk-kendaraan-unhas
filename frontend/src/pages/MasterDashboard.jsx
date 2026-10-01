@@ -325,8 +325,8 @@ const MasterDashboard = ({ onSettingsSaved }) => {
             }
           };
           
-          // Meminta print route tanpa auto-download/auto-print
-          iframe.src = `/print/${id}?headless=true`;
+          // Meminta print route tanpa auto-download/auto-print (Gunakan # untuk HashRouter)
+          iframe.src = `/#/print/${id}?headless=true`;
           document.body.appendChild(iframe);
         });
       }
