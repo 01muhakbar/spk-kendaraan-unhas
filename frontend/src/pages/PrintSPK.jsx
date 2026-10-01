@@ -293,10 +293,10 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full">
             <tbody>
-              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase()}</td></tr>
-              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type)}</td></tr>
-              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan)}</td></tr>
-              <tr><td className="py-0.5">Nama Pengemudi</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir)}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase() || '-'}</td></tr>
+              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type) || '-'}</td></tr>
+              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan) || '-'}</td></tr>
+              <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir) || '-'}</td></tr>
               <tr><td className="py-0.5">Tanggal Laporan</td><td>:</td><td>Makassar, {formatDate(spk.tanggalLaporan)}</td></tr>
             </tbody>
           </table>
@@ -354,10 +354,10 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full ml-4">
             <tbody>
-              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase()}</td></tr>
-              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type)}</td></tr>
-              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan)}</td></tr>
-              <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir)}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase() || '-'}</td></tr>
+              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type) || '-'}</td></tr>
+              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan) || '-'}</td></tr>
+              <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir) || '-'}</td></tr>
             </tbody>
           </table>
 
@@ -385,8 +385,8 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full">
             <tbody>
-              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase()}</td></tr>
-              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type)}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase() || '-'}</td></tr>
+              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type) || '-'}</td></tr>
               <tr><td className="py-0.5">Hari / Tanggal</td><td>:</td><td>{formatHariTanggal(spk.tanggalPengecekan)}</td></tr>
             </tbody>
           </table>
@@ -478,10 +478,10 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-3 w-full ml-4">
             <tbody>
-              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase()}</td></tr>
-              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type)}</td></tr>
-              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan)}</td></tr>
-              <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir)}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase() || '-'}</td></tr>
+              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type) || '-'}</td></tr>
+              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan) || '-'}</td></tr>
+              <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{capitalizeEachWord(kendaraan?.nama_sopir) || '-'}</td></tr>
             </tbody>
           </table>
 
@@ -529,9 +529,9 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-3 w-full ml-4">
             <tbody>
-              <tr><td className="w-44 py-0.5">Nomor Polisi (DD)</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase()}</td></tr>
-              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan)}</td></tr>
-              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type)}</td></tr>
+              <tr><td className="w-44 py-0.5">Nomor Polisi (DD)</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi?.toUpperCase() || '-'}</td></tr>
+              <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{capitalizeEachWord(kendaraan?.jenis_kendaraan) || '-'}</td></tr>
+              <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{capitalizeEachWord(kendaraan?.merek_type) || '-'}</td></tr>
               <tr><td className="py-0.5">Masuk Tanggal</td><td>:</td><td>{formatDate(spk.tanggalMasukBengkel)}</td></tr>
               <tr><td className="py-0.5">Garansi Perbaikan</td><td>:</td><td className="font-semibold">{spk.masaGaransi || '—'}</td></tr>
             </tbody>
