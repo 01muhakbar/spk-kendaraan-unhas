@@ -137,6 +137,24 @@ router.post('/import', async (req, res) => {
       return res.status(400).json({ error: "Format data tidak valid, harus berupa array" });
     }
 
+    const importSchema = z.array(z.object({
+      Nomor_SPK: z.string().min(1).optional(),
+      nomorSPK: z.string().min(1).optional(),
+      Tanggal_Laporan: z.string().min(1).optional(),
+      tanggalLaporan: z.string().min(1).optional(),
+      Nomor_Polisi: z.string().min(1).optional(),
+      Nama_Bengkel: z.string().min(1).optional(),
+      Daftar_Kerusakan: z.string().min(1).optional(),
+      vehicleId: z.string().uuid().optional(),
+      vendorId: z.string().uuid().optional(),
+    }).passthrough().refine(data => data.Nomor_SPK || data.nomorSPK, { message: "Nomor SPK wajib diisi" })
+      .refine(data => data.Tanggal_Laporan || data.tanggalLaporan, { message: "Tanggal Laporan wajib diisi" })
+      .refine(data => data.Nomor_Polisi || data.vehicleId, { message: "Nomor Polisi / Vehicle ID wajib diisi" })
+      .refine(data => data.Nama_Bengkel || data.vendorId, { message: "Nama Bengkel / Vendor ID wajib diisi" }));
+
+    // Validasi skema
+    importSchema.parse(rawDataArray);
+
     const processedDataArray = [];
 
     // Lakukan iterasi satu per satu karena ada async lookup ke database
@@ -235,6 +253,9 @@ router.post('/import', async (req, res) => {
     res.status(200).json({ message: "Data berhasil diimpor" });
   } catch (error) {
     if (transaction) await transaction.rollback();
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validasi gagal: Kolom wajib tidak boleh kosong.', details: error.errors });
+    }
     res.status(400).json({ error: error.message });
   }
 });

@@ -280,16 +280,20 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         id, createdAt, updatedAt, deletedAt, vehicleId, vendorId, 
         vehicle, vendor, signatoryPejabat, signatoryTeknisi,
         daftarKerusakan, tabelPengecekan, tabelPekerjaan,
+        nomorSPK, tanggalLaporan, status,
         ...rest 
       } = item;
 
       return {
-        ...rest,
-        'Nomor Polisi': vehicle?.nomor_polisi || '-',
-        'Nama Bengkel': vendor?.nama_bengkel || '-',
-        'Daftar Kerusakan': flattenJSON(daftarKerusakan),
-        'Tabel Pengecekan': flattenJSON(tabelPengecekan, 'komponenRusak'),
-        'Tabel Pekerjaan': flattenJSON(tabelPekerjaan, 'jenisPekerjaan')
+        Nomor_SPK: nomorSPK || '-',
+        Tanggal_Laporan: tanggalLaporan || '-',
+        Nomor_Polisi: vehicle?.nomor_polisi || '-',
+        Nama_Bengkel: vendor?.nama_bengkel || '-',
+        Status: status || '-',
+        Daftar_Kerusakan: flattenJSON(daftarKerusakan),
+        Tabel_Pengecekan: flattenJSON(tabelPengecekan, 'komponenRusak'),
+        Tabel_Pekerjaan: flattenJSON(tabelPekerjaan, 'jenisPekerjaan'),
+        ...rest 
       };
     });
     const csvString = Papa.unparse(flattenedData);
@@ -761,8 +765,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         <button onClick={downloadSpkTemplate} className="text-blue-600 hover:text-blue-800 text-xs font-semibold underline px-2">Template CSV</button>
                         <button onClick={() => handleExportJSON(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export JSON</button>
                         <button onClick={() => handleExportCSV(filteredSpks)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium border border-gray-300">Export CSV</button>
-                        <button onClick={() => fileInputRef.current?.click()} className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm font-medium border border-blue-200">Import Data</button>
-                        <input type="file" accept=".csv, .json" className="hidden" ref={fileInputRef} onChange={handleImportFile} />
+                        <button onClick={() => fileInputRef.current?.click()} disabled={loading} className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded text-sm font-medium border border-blue-200 disabled:opacity-50">
+                          {loading ? 'Mengimpor...' : 'Import Data'}
+                        </button>
+                        <input type="file" accept=".csv, .json" className="hidden" ref={fileInputRef} onChange={handleImportFile} disabled={loading} />
                       </div>
                       <input 
                         type="text" 
