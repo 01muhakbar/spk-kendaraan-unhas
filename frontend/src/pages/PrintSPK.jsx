@@ -550,7 +550,7 @@ const PrintSPK = ({ onReady }) => {
             <tbody>
               {spk.tabelPekerjaanType === 'Manual' ? (
                 Array.from({ length: 11 }).map((_, index) => (
-                  <tr key={index} className="h-8 text-sm">
+                  <tr key={index} className="h-7 text-sm">
                     <td className="border-t border-l border-black p-1 text-center">{index + 1}</td>
                     <td className="border-t border-l border-black p-1"></td>
                     <td className="border-t border-l border-black p-1"></td>
@@ -575,12 +575,12 @@ const PrintSPK = ({ onReady }) => {
             </tbody>
           </table>
 
-          <div className="mt-8 pt-4 border-t border-gray-400 break-inside-avoid">
-            <div className="grid grid-cols-2 gap-8 mb-4">
+          <div className="mt-4 pt-3 border-t border-gray-400 break-inside-avoid">
+            <div className="grid grid-cols-2 gap-4 mb-2">
               <div className="text-center">
                 <p className="text-xs">Yang Menerima,</p>
                 <p className="text-xs font-semibold">Sopir / Pengguna</p>
-                <div style={{ height: '50px' }}></div>
+                <div style={{ height: '40px' }}></div>
                 {spk.penerimaType === 'Manual' ? (
                   <p className="text-sm">(.........................................)</p>
                 ) : (
@@ -590,13 +590,13 @@ const PrintSPK = ({ onReady }) => {
               <div className="text-center">
                 <p className="text-sm">Yang Menyerahkan,</p>
                 <p className="text-sm font-semibold">Pihak Bengkel</p>
-                <div style={{ height: '50px' }}></div>
+                <div style={{ height: '40px' }}></div>
                 <p className="text-sm">(.........................................)</p>
                 <p className="font-bold text-sm mt-1">{vendor?.nama_bengkel || '___________________'}</p>
               </div>
             </div>
             
-            <div className="mt-3 flex justify-between text-left">
+            <div className="mt-1 flex justify-between text-left">
               
               {/* Kolom Kiri: Tim Teknisi Unhas */}
               <div className="w-1/2 pr-4">
@@ -623,7 +623,7 @@ const PrintSPK = ({ onReady }) => {
               <div className="w-1/2 text-center">
                 <p className="font-semibold text-sm mb-1">Mengetahui:</p>
                 <p className="text-sm">Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
-                <div style={{ height: '60px' }}></div>
+                <div style={{ height: '40px' }}></div>
                 <div>
                   <p className="font-bold text-sm">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                   <p className="text-sm">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
