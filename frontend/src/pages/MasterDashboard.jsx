@@ -24,6 +24,11 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   
+  // Pagination State
+  const [spkPage, setSpkPage] = useState(1);
+  const [vehiclePage, setVehiclePage] = useState(1);
+  const ROWS_PER_PAGE = 10;
+  
   // Bulk Download States
   const [selectedSpkIds, setSelectedSpkIds] = useState([]);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -707,6 +712,9 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 return matchesKeyword && matchesStatus;
               });
 
+              const totalSpkPages = Math.ceil(filteredSpks.length / ROWS_PER_PAGE);
+              const currentSpks = filteredSpks.slice((spkPage - 1) * ROWS_PER_PAGE, spkPage * ROWS_PER_PAGE);
+
               return (
                 <div>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
@@ -765,7 +773,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       </thead>
                       <tbody>
                         {filteredSpks.length === 0 && <tr><td colSpan="6" className="p-4 text-center">Belum ada data SPK yang sesuai.</td></tr>}
-                        {filteredSpks.map(spk => (
+                        {currentSpks.map(spk => (
                           <tr key={spk.id} className={`border-b hover:bg-gray-50 ${selectedSpkIds.includes(spk.id) ? 'bg-blue-50/50' : ''}`}>
                             <td className="p-3 text-center">
                               <input 
@@ -812,12 +820,40 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       </tbody>
                     </table>
                   </div>
+                  
+                  {/* Paginasi SPK */}
+                  {totalSpkPages > 1 && (
+                    <div className="flex justify-between items-center px-4 py-3 border-t bg-white sm:px-6 mt-2">
+                      <div className="text-sm text-gray-700">
+                        Menampilkan <span className="font-medium">{(spkPage - 1) * ROWS_PER_PAGE + 1}</span> hingga <span className="font-medium">{Math.min(spkPage * ROWS_PER_PAGE, filteredSpks.length)}</span> dari <span className="font-medium">{filteredSpks.length}</span> hasil
+                      </div>
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => setSpkPage(p => Math.max(1, p - 1))}
+                          disabled={spkPage === 1}
+                          className="px-3 py-1 border rounded text-sm font-medium disabled:opacity-50"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button 
+                          onClick={() => setSpkPage(p => Math.min(totalSpkPages, p + 1))}
+                          disabled={spkPage === totalSpkPages}
+                          className="px-3 py-1 border rounded text-sm font-medium disabled:opacity-50"
+                        >
+                          Selanjutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
 
             {/* TAB: VEHICLES */}
-            {activeTab === 'vehicles' && (
+            {activeTab === 'vehicles' && (() => {
+              const totalVehiclePages = Math.ceil(vehicles.length / ROWS_PER_PAGE);
+              const currentVehicles = vehicles.slice((vehiclePage - 1) * ROWS_PER_PAGE, vehiclePage * ROWS_PER_PAGE);
+              return (
               <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
@@ -850,7 +886,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {vehicles.map(v => (
+                      {currentVehicles.map(v => (
                         <tr key={v.id} className="border-b hover:bg-gray-50">
                           <td className="p-3 font-bold uppercase">{v.nomor_polisi}</td>
                           <td className="p-3 capitalize">{v.merek_type?.toLowerCase()}</td>
@@ -865,8 +901,34 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     </tbody>
                   </table>
                 </div>
+                
+                {/* Paginasi Kendaraan */}
+                {totalVehiclePages > 1 && (
+                  <div className="flex justify-between items-center px-4 py-3 border-t bg-white sm:px-6 mt-2">
+                    <div className="text-sm text-gray-700">
+                      Menampilkan <span className="font-medium">{(vehiclePage - 1) * ROWS_PER_PAGE + 1}</span> hingga <span className="font-medium">{Math.min(vehiclePage * ROWS_PER_PAGE, vehicles.length)}</span> dari <span className="font-medium">{vehicles.length}</span> hasil
+                    </div>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => setVehiclePage(p => Math.max(1, p - 1))}
+                        disabled={vehiclePage === 1}
+                        className="px-3 py-1 border rounded text-sm font-medium disabled:opacity-50"
+                      >
+                        Sebelumnya
+                      </button>
+                      <button 
+                        onClick={() => setVehiclePage(p => Math.min(totalVehiclePages, p + 1))}
+                        disabled={vehiclePage === totalVehiclePages}
+                        className="px-3 py-1 border rounded text-sm font-medium disabled:opacity-50"
+                      >
+                        Selanjutnya
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+              );
+            })()}
 
             {/* TAB: SIGNATORIES */}
             {activeTab === 'signatories' && (
