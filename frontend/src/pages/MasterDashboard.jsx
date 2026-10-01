@@ -306,7 +306,28 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 margin: 0,
                 filename: `SPK_${spkNum}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+                html2canvas: { 
+                  scale: 2, 
+                  useCORS: true, 
+                  windowWidth: 800,
+                  onclone: (clonedDoc) => {
+                    // html2canvas tidak mendukung oklch() dan color-mix() dari Tailwind v4
+                    // Kita harus menghapusnya dari stylesheet di dokumen hasil clone
+                    const styles = clonedDoc.querySelectorAll('style');
+                    styles.forEach(style => {
+                      style.innerHTML = style.innerHTML
+                        .replace(/oklch\(\s*([\d.]+)(%?)[^)]*\)/g, (match, l, pct) => {
+                          let lightness = parseFloat(l);
+                          if (pct) lightness /= 100;
+                          // Konversi kecerahan oklch ke Hex RGB standar
+                          if (lightness > 0.85) return '#f3f4f6'; // Terang (Background)
+                          if (lightness > 0.5) return '#9ca3af';  // Sedang (Borders)
+                          return '#111827';                       // Gelap (Teks)
+                        })
+                        .replace(/color-mix\([^)]+\)/g, 'inherit'); // Hapus color-mix
+                    });
+                  }
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
               };
               
