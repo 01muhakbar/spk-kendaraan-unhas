@@ -234,6 +234,7 @@ const PrintSPK = ({ onReady }) => {
   };
 
   const isAutoDownload = new URLSearchParams(location.search).get('autoDownload') === 'true';
+  const isHeadless = new URLSearchParams(location.search).get('headless') === 'true';
   // Ubah text-xs menjadi text-sm agar dokumen lebih terbaca (standar instansi)
   const pageClass = `bg-white text-black mx-auto ${(isAutoDownload || isHeadless) ? 'h-[296mm]' : 'shadow-md border border-gray-300 h-[297mm]'} print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-sm w-[210mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col`;
 
