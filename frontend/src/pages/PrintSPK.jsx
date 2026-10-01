@@ -92,7 +92,7 @@ const KopSurat = ({ logoUrl, settings }) => {
 
 const TTD = ({ label, nama, nipNik, isNIK = false }) => (
   <div className="text-center" style={{ width: '180px' }}>
-    <p className="text-xs">{label}</p>
+    <p className="text-xs whitespace-pre-wrap">{label}</p>
     <div style={{ height: '60px' }}></div>
     <p className={`${nama && nama.startsWith('(') ? 'text-xs font-normal' : 'font-bold text-xs'}`}>{nama || '___________________'}</p>
     {nipNik && <p className="text-xs">{isNIK ? 'NIK' : 'NIP'}. {nipNik}</p>}
