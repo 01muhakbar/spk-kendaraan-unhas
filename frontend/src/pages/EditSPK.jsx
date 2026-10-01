@@ -247,6 +247,9 @@ const EditSPK = () => {
       if (!prev.tanggalMasukBengkel || prev.tanggalMasukBengkel === prev.tanggalLaporan) {
         updates.tanggalMasukBengkel = newDate;
       }
+      if (!prev.tanggalPersetujuan || prev.tanggalPersetujuan === prev.tanggalLaporan) {
+        updates.tanggalPersetujuan = newDate;
+      }
       return { ...prev, ...updates };
     });
   };
