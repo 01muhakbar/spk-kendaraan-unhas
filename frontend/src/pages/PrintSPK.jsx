@@ -233,10 +233,10 @@ const PrintSPK = ({ onReady }) => {
     return res;
   };
 
-  const pageClass = "bg-white text-black shadow-md mx-auto border border-gray-300 print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-xs w-[210mm] h-[297mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col";
-
   const isAutoDownload = new URLSearchParams(location.search).get('autoDownload') === 'true';
   const isHeadless = new URLSearchParams(location.search).get('headless') === 'true';
+
+  const pageClass = `bg-white text-black mx-auto ${(isAutoDownload || isHeadless) ? 'h-[296mm]' : 'shadow-md border border-gray-300 h-[297mm]'} print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-xs w-[210mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col`;
 
   return (
     <div className={`min-h-screen pb-16 print:bg-white print:p-0 print:pb-0 ${(isAutoDownload || isHeadless) ? 'bg-white' : 'bg-gray-200'}`}>
