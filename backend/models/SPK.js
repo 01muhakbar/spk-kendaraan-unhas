@@ -14,6 +14,11 @@ const SPK = sequelize.define('SPK', {
     allowNull: false,
     defaultValue: 1
   },
+  tahun: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: new Date().getFullYear()
+  },
   nomorSPK: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -90,7 +95,14 @@ const SPK = sequelize.define('SPK', {
 }, {
   tableName: 'spk_perbaikan',
   timestamps: true,
-  paranoid: true
+  paranoid: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['nomorUrut', 'tahun'],
+      name: 'unique_nomor_spk_per_tahun'
+    }
+  ]
 });
 
 // Relationships

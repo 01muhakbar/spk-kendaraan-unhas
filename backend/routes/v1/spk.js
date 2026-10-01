@@ -78,34 +78,52 @@ router.get('/:id', async (req, res) => {
 
 // POST — buat SPK baru
 router.post('/', async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const tahun = new Date().getFullYear();
-    let { nomorUrutInput } = req.body;
+    let { nomorUrutInput, isManualEdit, ...dataLainnya } = req.body;
     let finalNomorSPK, finalNomorUrut;
 
-    if (nomorUrutInput) {
+    if (isManualEdit && nomorUrutInput) {
       finalNomorUrut = parseInt(nomorUrutInput, 10);
       const paddedUrut = finalNomorUrut.toString().padStart(3, '0');
       finalNomorSPK = `${paddedUrut}/RT/P-Kend/${tahun}`;
-
-      // Validasi duplikasi
-      const existing = await SPK.findOne({ where: { nomorSPK: finalNomorSPK } });
-      if (existing) {
-        return res.status(409).json({ error: `Nomor SPK ${finalNomorSPK} sudah digunakan. Silakan gunakan angka lain.` });
-      }
     } else {
-      const generated = await generateSPKNumber();
-      finalNomorSPK = generated.nomorSPK;
-      finalNomorUrut = generated.nomorUrut;
+      // Locking row level untuk mencegah race condition
+      const maxSpk = await SPK.findOne({
+        attributes: [[sequelize.fn('MAX', sequelize.col('nomorUrut')), 'max_nomor']],
+        where: { tahun: tahun },
+        transaction: t,
+        lock: t.LOCK.UPDATE
+      });
+      const maxNumber = maxSpk.getDataValue('max_nomor') || 0;
+      finalNomorUrut = maxNumber + 1;
+      const paddedUrut = finalNomorUrut.toString().padStart(3, '0');
+      finalNomorSPK = `${paddedUrut}/RT/P-Kend/${tahun}`;
     }
 
     const newSPK = await SPK.create({
-      ...req.body,
+      ...dataLainnya,
       nomorSPK: finalNomorSPK,
-      nomorUrut: finalNomorUrut
-    });
+      nomorUrut: finalNomorUrut,
+      tahun: tahun
+    }, { transaction: t });
+
+    await t.commit();
     res.status(201).json(newSPK);
   } catch (error) {
+    await t.rollback();
+    
+    // Tangkap error jika terjadi konflik unique index (Race Condition)
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const currentMax = await SPK.max('nomorUrut', { where: { tahun: new Date().getFullYear() } });
+      const rekomendasi_nomor = (currentMax || 0) + 1;
+      return res.status(409).json({ 
+        error: `Nomor SPK sudah digunakan oleh pengguna lain.`, 
+        rekomendasi_nomor: rekomendasi_nomor 
+      });
+    }
+
     res.status(400).json({ error: error.message });
   }
 });

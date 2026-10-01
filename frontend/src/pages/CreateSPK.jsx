@@ -94,6 +94,7 @@ const CreateSPK = () => {
   const [vendors, setVendors] = useState([]);
   const [signatories, setSignatories] = useState([]);
   const [nomorUrut, setNomorUrut] = useState('');
+  const [estimasiNomorAwal, setEstimasiNomorAwal] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -127,7 +128,9 @@ const CreateSPK = () => {
         setKendaraans(resK.data);
         setVendors(resV.data);
         setSignatories(resS.data);
-        setNomorUrut(resNext.data.nextUrut);
+        const nextNum = resNext.data.nextUrut.toString();
+        setNomorUrut(nextNum);
+        setEstimasiNomorAwal(nextNum);
       } catch (error) {
         console.error('Error fetching master data:', error);
       }
@@ -219,18 +222,31 @@ const CreateSPK = () => {
     setSubmitting(true);
     setErrorMsg('');
     try {
-      const payload = { ...formData, vehicleId: formData.kendaraanId, nomorUrutInput: nomorUrut };
+      const isManualEdit = nomorUrut !== estimasiNomorAwal;
+      const payload = { ...formData, vehicleId: formData.kendaraanId, nomorUrutInput: nomorUrut, isManualEdit };
       const res = await axios.post(`${API}/spk`, payload);
       navigate(`/print/${res.data.id}`);
     } catch (error) {
-      if (!error.response) {
+      if (error.response && error.response.status === 409) {
+        const rek = error.response.data.rekomendasi_nomor;
+        if (rek) {
+          const rekStr = rek.toString().padStart(3, '0');
+          setErrorMsg(`Gagal menyimpan! Nomor SPK telah dipakai sistem. Nomor Anda otomatis diperbarui menjadi ${rekStr}. Silakan periksa dan klik Simpan kembali.`);
+          setNomorUrut(rekStr);
+          setEstimasiNomorAwal(rekStr);
+        } else {
+          setErrorMsg(error.response.data.error || 'Nomor SPK sudah digunakan.');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (!error.response) {
         setErrorMsg('Gagal terhubung ke server (Network Error). Pastikan backend aktif.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const dataErr = error.response?.data?.error || error.response?.data?.message;
         setErrorMsg(`Gagal membuat SPK: ${typeof dataErr === 'string' ? dataErr : JSON.stringify(dataErr) || error.message}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       console.error(error);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
     }
