@@ -215,6 +215,20 @@ const CreateSPK = () => {
     setFormData({ ...formData, tabelPekerjaan: arr.length ? arr : [{ jenisPekerjaan: '', satuan: '', kuantitas: '' }] });
   };
 
+  const handleTanggalLaporanChange = (e) => {
+    const newDate = e.target.value;
+    setFormData(prev => {
+      const updates = { tanggalLaporan: newDate };
+      if (!prev.tanggalPengecekan || prev.tanggalPengecekan === prev.tanggalLaporan) {
+        updates.tanggalPengecekan = newDate;
+      }
+      if (!prev.tanggalMasukBengkel || prev.tanggalMasukBengkel === prev.tanggalLaporan) {
+        updates.tanggalMasukBengkel = newDate;
+      }
+      return { ...prev, ...updates };
+    });
+  };
+
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
@@ -303,7 +317,7 @@ const CreateSPK = () => {
             </div>
             <div>
               <label className={labelClass}>Tanggal Laporan <span className="text-red-500">*</span></label>
-              <input type="date" className={inputClass} value={formData.tanggalLaporan} onChange={e => setFormData({ ...formData, tanggalLaporan: e.target.value })} required />
+              <input type="date" className={inputClass} value={formData.tanggalLaporan} onChange={handleTanggalLaporanChange} required />
             </div>
             <div>
               <label className={labelClass}>Merek / Type <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
