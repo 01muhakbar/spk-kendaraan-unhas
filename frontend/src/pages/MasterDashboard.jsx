@@ -310,10 +310,11 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
               };
               
-              const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+              const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
               zip.file(`SPK_${spkNum}.pdf`, pdfBlob);
             } catch (err) {
               console.error("Gagal merender PDF untuk SPK ID:", id, err);
+              zip.file(`ERROR_SPK_${id}.txt`, err.toString() + "\n" + (err.stack || ""));
             } finally {
               root.unmount();
               document.body.removeChild(container);
