@@ -234,9 +234,8 @@ const PrintSPK = ({ onReady }) => {
   };
 
   const isAutoDownload = new URLSearchParams(location.search).get('autoDownload') === 'true';
-  const isHeadless = new URLSearchParams(location.search).get('headless') === 'true';
-
-  const pageClass = `bg-white text-black mx-auto ${(isAutoDownload || isHeadless) ? 'h-[296mm]' : 'shadow-md border border-gray-300 h-[297mm]'} print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-xs w-[210mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col`;
+  // Ubah text-xs menjadi text-sm agar dokumen lebih terbaca (standar instansi)
+  const pageClass = `bg-white text-black mx-auto ${(isAutoDownload || isHeadless) ? 'h-[296mm]' : 'shadow-md border border-gray-300 h-[297mm]'} print:shadow-none print:border-none print:m-0 break-after-page last:break-after-auto text-sm w-[210mm] print:h-auto print:min-h-[297mm] p-[20mm] box-border relative flex flex-col`;
 
   return (
     <div className={`min-h-screen pb-16 print:bg-white print:p-0 print:pb-0 ${(isAutoDownload || isHeadless) ? 'bg-white' : 'bg-gray-200'}`}>
@@ -276,8 +275,8 @@ const PrintSPK = ({ onReady }) => {
           <table className="mb-6 w-full">
             <tbody>
               <tr>
-                <td className="w-20 align-top">Kepada Yth.</td>
-                <td className="align-top">:</td>
+                <td className="w-28 align-top">Kepada Yth.</td>
+                <td className="w-4 align-top">:</td>
                 <td>
                   <p className="font-semibold">{kasiTU?.jabatan || 'Kepala Seksi Tata Usaha dan Rumah Tangga'}</p>
                   <p>Universitas Hasanuddin</p>
@@ -293,7 +292,7 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full">
             <tbody>
-              <tr><td className="w-1/3 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
               <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{kendaraan?.merek_type}</td></tr>
               <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{kendaraan?.jenis_kendaraan}</td></tr>
               <tr><td className="py-0.5">Nama Pengemudi</td><td>:</td><td>{kendaraan?.nama_sopir}</td></tr>
@@ -302,9 +301,9 @@ const PrintSPK = ({ onReady }) => {
           </table>
 
           <p className="mb-2 font-semibold whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR1_DUGAAN) || 'Adapun dugaan kerusakan sebagai berikut:'}</p>
-          <ol className="list-decimal pl-6 mb-4 space-y-1">
+          <ol className="list-decimal pl-6 mb-4 space-y-2">
             {listKerusakanAktif.map((item, i) => (
-              <li key={i} className="min-h-[20px] border-b border-gray-200 border-dotted w-full">
+              <li key={i} className="min-h-[24px] pb-1 border-b border-gray-200 border-dotted w-full">
                 {item}
               </li>
             ))}
@@ -354,7 +353,7 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full ml-4">
             <tbody>
-              <tr><td className="w-1/3 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
               <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{kendaraan?.merek_type}</td></tr>
               <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{kendaraan?.jenis_kendaraan}</td></tr>
               <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{kendaraan?.nama_sopir}</td></tr>
@@ -385,7 +384,7 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-4 w-full">
             <tbody>
-              <tr><td className="w-1/3 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
               <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{kendaraan?.merek_type}</td></tr>
               <tr><td className="py-0.5">Hari / Tanggal</td><td>:</td><td>{formatHariTanggal(spk.tanggalPengecekan)}</td></tr>
             </tbody>
@@ -430,22 +429,22 @@ const PrintSPK = ({ onReady }) => {
           <div className="mt-12 pt-8 break-inside-avoid">
             <p className="mb-8 whitespace-pre-wrap">{replaceVars(lembarSettings?.LEMBAR3_PENUTUP) || 'Demikian hasil pengecekan ini kami laporkan untuk dapat ditindaklanjuti.'}</p>
             <p className="font-semibold mb-4">Tim Teknisi Otomotif Unhas</p>
-            <div className="flex flex-col gap-8">
-              <div className="flex items-start">
-                <div className="w-6">1.</div>
-                <div className="w-48">
+            <div className="flex flex-col gap-5 mt-2">
+              <div className="flex items-end gap-2">
+                <div className="w-6 pb-1">1.</div>
+                <div className="w-56">
                   <p className="font-bold">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
                   <p>NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
                 </div>
-                <div className="ml-4">(…… …………………………)</div>
+                <div className="ml-4 pb-1">(…… …………………………)</div>
               </div>
-              <div className="flex items-start">
-                <div className="w-6">2.</div>
-                <div className="w-48">
+              <div className="flex items-end gap-2">
+                <div className="w-6 pb-1">2.</div>
+                <div className="w-56">
                   <p className="font-bold">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
                   <p>NIP. {teknisi2?.nip_nik || '198508272018015001'}</p>
                 </div>
-                <div className="ml-4">(…… …………………………)</div>
+                <div className="ml-4 pb-1">(…… …………………………)</div>
               </div>
             </div>
           </div>
@@ -478,7 +477,7 @@ const PrintSPK = ({ onReady }) => {
 
           <table className="mb-3 w-full ml-4">
             <tbody>
-              <tr><td className="w-1/3 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
+              <tr><td className="w-40 py-0.5">Nomor Polisi</td><td className="w-4">:</td><td className="font-bold">{kendaraan?.nomor_polisi}</td></tr>
               <tr><td className="py-0.5">Merek / Type</td><td>:</td><td>{kendaraan?.merek_type}</td></tr>
               <tr><td className="py-0.5">Jenis Kendaraan</td><td>:</td><td>{kendaraan?.jenis_kendaraan}</td></tr>
               <tr><td className="py-0.5">Pengguna / Sopir</td><td>:</td><td>{kendaraan?.nama_sopir}</td></tr>
@@ -497,20 +496,20 @@ const PrintSPK = ({ onReady }) => {
           <div className="mt-12 pt-6 mb-4 break-inside-avoid">
             <p className="mb-1 text-center">Makassar, {formatDate(spk.tanggalPersetujuan)}</p>
             <p className="font-semibold mb-3 text-center">Disetujui:</p>
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 gap-8 mt-2">
               <div className="text-center">
-                <p className="text-xs">Direktur Komunikasi /</p>
-                <p className="text-xs">Sekretariat Rektor,</p>
+                <p className="text-sm">Direktur Komunikasi /</p>
+                <p className="text-sm">Sekretariat Rektor,</p>
                 <div style={{ height: '70px' }}></div>
-                <p className="font-bold text-xs">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
-                <p className="text-xs">NIP. {direktur?.nip_nik || '197109082022043001'}</p>
+                <p className="font-bold text-sm">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
+                <p className="text-sm">NIP. {direktur?.nip_nik || '197109082022043001'}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs">Kepala Subdit. Kerumahtanggaan</p>
-                <p className="text-xs">dan Keprotokolan,</p>
+                <p className="text-sm">Kepala Subdit. Kerumahtanggaan</p>
+                <p className="text-sm">dan Keprotokolan,</p>
                 <div style={{ height: '70px' }}></div>
-                <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
-                <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
+                <p className="font-bold text-sm">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+                <p className="text-sm">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
               </div>
             </div>
           </div>
@@ -550,7 +549,7 @@ const PrintSPK = ({ onReady }) => {
             <tbody>
               {spk.tabelPekerjaanType === 'Manual' ? (
                 Array.from({ length: 11 }).map((_, index) => (
-                  <tr key={index} className="border-b border-black h-5 text-xs">
+                  <tr key={index} className="border-b border-black h-8 text-sm">
                     <td className="border border-black p-1 text-center">{index + 1}</td>
                     <td className="border border-black p-1"></td>
                     <td className="border border-black p-1"></td>
@@ -582,17 +581,17 @@ const PrintSPK = ({ onReady }) => {
                 <p className="text-xs font-semibold">Sopir / Pengguna</p>
                 <div style={{ height: '50px' }}></div>
                 {spk.penerimaType === 'Manual' ? (
-                  <p className="text-xs">(.........................................)</p>
+                  <p className="text-sm">(.........................................)</p>
                 ) : (
-                  <p className="font-bold text-xs">{capitalizeEachWord(kendaraan?.nama_sopir) || '___________________'}</p>
+                  <p className="font-bold text-sm">{capitalizeEachWord(kendaraan?.nama_sopir) || '___________________'}</p>
                 )}
               </div>
               <div className="text-center">
-                <p className="text-xs">Yang Menyerahkan,</p>
-                <p className="text-xs font-semibold">Pihak Bengkel</p>
+                <p className="text-sm">Yang Menyerahkan,</p>
+                <p className="text-sm font-semibold">Pihak Bengkel</p>
                 <div style={{ height: '50px' }}></div>
-                <p className="text-xs">(.........................................)</p>
-                <p className="font-bold text-xs mt-1">{vendor?.nama_bengkel || '___________________'}</p>
+                <p className="text-sm">(.........................................)</p>
+                <p className="font-bold text-sm mt-1">{vendor?.nama_bengkel || '___________________'}</p>
               </div>
             </div>
             
@@ -600,33 +599,33 @@ const PrintSPK = ({ onReady }) => {
               
               {/* Kolom Kiri: Tim Teknisi Unhas */}
               <div className="w-1/2 pr-4">
-                <p className="font-semibold text-xs mb-2">Tim Teknisi Unhas</p>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-start">
-                    <div className="w-40">
-                      <p className="font-bold text-xs">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
-                      <p className="text-xs">NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
+                <p className="font-semibold text-sm mb-2">Tim Teknisi Unhas</p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-end gap-2">
+                    <div className="w-48">
+                      <p className="font-bold text-sm">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
+                      <p className="text-sm">NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
                     </div>
-                    <div className="text-xs">(……………………)</div>
+                    <div className="text-sm pb-1">(……………………)</div>
                   </div>
-                  <div className="flex items-start">
-                    <div className="w-40">
-                      <p className="font-bold text-xs">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
-                      <p className="text-xs">NIP. {teknisi2?.nip_nik || '198508272018015001'}</p>
+                  <div className="flex items-end gap-2">
+                    <div className="w-48">
+                      <p className="font-bold text-sm">{teknisi2?.nama_lengkap || 'Syaripuddin, S.E'}</p>
+                      <p className="text-sm">NIP. {teknisi2?.nip_nik || '198508272018015001'}</p>
                     </div>
-                    <div className="text-xs">(……………………)</div>
+                    <div className="text-sm pb-1">(……………………)</div>
                   </div>
                 </div>
               </div>
 
               {/* Kolom Kanan: Mengetahui & Kepala Subdit */}
               <div className="w-1/2 text-center">
-                <p className="font-semibold text-xs mb-1">Mengetahui:</p>
-                <p className="text-xs">Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
+                <p className="font-semibold text-sm mb-1">Mengetahui:</p>
+                <p className="text-sm">Kepala Subdit. Kerumahtanggaan<br/>dan Keprotokolan,</p>
                 <div style={{ height: '60px' }}></div>
                 <div>
-                  <p className="font-bold text-xs">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
-                  <p className="text-xs">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
+                  <p className="font-bold text-sm">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+                  <p className="text-sm">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
                 </div>
               </div>
 
