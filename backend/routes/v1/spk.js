@@ -130,19 +130,86 @@ router.post('/', async (req, res) => {
 
 // POST - import SPK
 router.post('/import', async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
-    const importSchema = z.array(z.object({
-      nomorSPK: z.string().min(1, "Nomor SPK wajib diisi"),
-      vehicleId: z.string().uuid("Vehicle ID harus UUID valid"),
-      vendorId: z.string().uuid("Vendor ID harus UUID valid"),
-      tanggalLaporan: z.string().min(1, "Tanggal Laporan wajib diisi"),
-    }).passthrough());
-    
-    // Validasi data masuk dengan Zod
-    const validDataArray = importSchema.parse(req.body);
-    
-    // Logika Upsert
-    await SPK.bulkCreate(validDataArray, {
+    const rawDataArray = req.body;
+    if (!Array.isArray(rawDataArray)) {
+      return res.status(400).json({ error: "Format data tidak valid, harus berupa array" });
+    }
+
+    const processedDataArray = [];
+
+    // Lakukan iterasi satu per satu karena ada async lookup ke database
+    for (let i = 0; i < rawDataArray.length; i++) {
+      const item = rawDataArray[i];
+      const rowNumber = i + 1; // Untuk pesan error agar user friendly (bila baris di CSV)
+
+      // 1. Dukungan untuk format Human-Readable vs Machine-Readable
+      const nomorSPK = item.Nomor_SPK || item.nomorSPK;
+      const tanggalLaporan = item.Tanggal_Laporan || item.tanggalLaporan;
+      
+      if (!nomorSPK) throw new Error(`Nomor SPK wajib diisi pada baris ke-${rowNumber}`);
+      if (!tanggalLaporan) throw new Error(`Tanggal Laporan wajib diisi pada baris ke-${rowNumber}`);
+
+      // 2. Lookup Relasi Data (Vehicle dan Vendor)
+      let vehicleId = item.vehicleId;
+      if (item.Nomor_Polisi) {
+        const vehicle = await Vehicle.findOne({ where: { nomor_polisi: item.Nomor_Polisi } });
+        if (!vehicle) {
+          throw new Error(`Nomor Polisi '${item.Nomor_Polisi}' pada baris ke-${rowNumber} tidak ditemukan di Master Kendaraan.`);
+        }
+        vehicleId = vehicle.id;
+      }
+
+      let vendorId = item.vendorId;
+      if (item.Nama_Bengkel) {
+        const vendor = await VendorMaster.findOne({ where: { nama_bengkel: item.Nama_Bengkel } });
+        if (!vendor) {
+          throw new Error(`Nama Bengkel '${item.Nama_Bengkel}' pada baris ke-${rowNumber} tidak ditemukan di Master Bengkel.`);
+        }
+        vendorId = vendor.id;
+      }
+
+      if (!vehicleId) throw new Error(`Vehicle ID / Nomor Polisi wajib diisi pada baris ke-${rowNumber}`);
+      if (!vendorId) throw new Error(`Vendor ID / Nama Bengkel wajib diisi pada baris ke-${rowNumber}`);
+
+      // 3. Flattening dan Transformasi JSON (Daftar_Kerusakan)
+      let daftarKerusakan = item.daftarKerusakan || [];
+      let tabelPekerjaan = item.tabelPekerjaan || [];
+      let tabelPengecekan = item.tabelPengecekan || [];
+
+      if (item.Daftar_Kerusakan && typeof item.Daftar_Kerusakan === 'string') {
+        const kerusakanArrayStr = item.Daftar_Kerusakan.split(',').map(k => k.trim()).filter(Boolean);
+        
+        daftarKerusakan = kerusakanArrayStr;
+        
+        tabelPekerjaan = kerusakanArrayStr.map(k => ({
+          jenisPekerjaan: k,
+          satuan: "",
+          kuantitas: ""
+        }));
+
+        tabelPengecekan = kerusakanArrayStr.map(k => ({
+          komponenRusak: k,
+          rekomendasi: "Perbaikan",
+          keterangan: ""
+        }));
+      }
+
+      processedDataArray.push({
+        ...item,
+        nomorSPK,
+        tanggalLaporan,
+        vehicleId,
+        vendorId,
+        daftarKerusakan,
+        tabelPekerjaan,
+        tabelPengecekan
+      });
+    }
+
+    // 4. Logika Upsert
+    await SPK.bulkCreate(processedDataArray, {
       updateOnDuplicate: [
         "nomorUrut",
         "tanggalLaporan", 
@@ -160,15 +227,15 @@ router.post('/import', async (req, res) => {
         "vehicleId", 
         "vendorId", 
         "updatedAt"
-      ] 
+      ],
+      transaction
     });
     
+    await transaction.commit();
     res.status(200).json({ message: "Data berhasil diimpor" });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validasi gagal: Data tidak sesuai format', details: error.errors });
-    }
-    res.status(500).json({ error: error.message });
+    if (transaction) await transaction.rollback();
+    res.status(400).json({ error: error.message });
   }
 });
 

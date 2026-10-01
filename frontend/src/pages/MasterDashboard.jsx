@@ -263,15 +263,35 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   };
 
   const handleExportCSV = (dataToExport) => {
-    const flattenedData = dataToExport.map(item => ({
-      ...item,
-      daftarKerusakan: typeof item.daftarKerusakan === 'string' ? item.daftarKerusakan : JSON.stringify(item.daftarKerusakan),
-      tabelPengecekan: typeof item.tabelPengecekan === 'string' ? item.tabelPengecekan : JSON.stringify(item.tabelPengecekan),
-      tabelPekerjaan: typeof item.tabelPekerjaan === 'string' ? item.tabelPekerjaan : JSON.stringify(item.tabelPekerjaan),
-      vehicle: undefined,
-      vendor: undefined,
-    }));
-    
+    const flattenJSON = (field, key) => {
+      if (!field) return '';
+      try {
+        const parsed = typeof field === 'string' ? JSON.parse(field) : field;
+        if (!Array.isArray(parsed)) return '';
+        if (key) return parsed.map(k => k[key]).filter(Boolean).join(', ');
+        return parsed.join(', ');
+      } catch (e) {
+        return '';
+      }
+    };
+
+    const flattenedData = dataToExport.map(item => {
+      const { 
+        id, createdAt, updatedAt, deletedAt, vehicleId, vendorId, 
+        vehicle, vendor, signatoryPejabat, signatoryTeknisi,
+        daftarKerusakan, tabelPengecekan, tabelPekerjaan,
+        ...rest 
+      } = item;
+
+      return {
+        ...rest,
+        'Nomor Polisi': vehicle?.nomor_polisi || '-',
+        'Nama Bengkel': vendor?.nama_bengkel || '-',
+        'Daftar Kerusakan': flattenJSON(daftarKerusakan),
+        'Tabel Pengecekan': flattenJSON(tabelPengecekan, 'komponenRusak'),
+        'Tabel Pekerjaan': flattenJSON(tabelPekerjaan, 'jenisPekerjaan')
+      };
+    });
     const csvString = Papa.unparse(flattenedData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -283,23 +303,11 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
   const downloadSpkTemplate = () => {
     const templateData = [{
-      nomorSPK: "001/RT/P-Kend/2026",
-      tanggalLaporan: "2026-01-01",
-      tanggalPengecekan: "2026-01-02",
-      tanggalPersetujuan: "2026-01-02",
-      tanggalMasukBengkel: "2026-01-03",
-      vehicleId: "Masukkan UUID Kendaraan disini",
-      vendorId: "Masukkan UUID Bengkel disini",
-      signatoryPejabatId: "Masukkan UUID Pejabat disini",
-      signatoryTeknisiId: "Masukkan UUID Teknisi disini",
-      status: "DRAFT",
-      masaGaransi: "1 Bulan",
-      penerimaType: "Otomatis",
-      pelaporType: "Otomatis",
-      tabelPekerjaanType: "Otomatis",
-      daftarKerusakan: '["Ganti oli", "Service rutin"]',
-      tabelPengecekan: '[{"komponenRusak": "Mesin", "rekomendasi": "Perbaikan", "keterangan": "-"}]',
-      tabelPekerjaan: '[{"jenisPekerjaan": "Ganti Oli", "satuan": "Liter", "kuantitas": "2"}]'
+      Nomor_SPK: "001/RT/P-Kend/2026",
+      Tanggal_Laporan: "2026-01-01",
+      Nomor_Polisi: "DD 1234 XX",
+      Nama_Bengkel: "Bengkel Sejahtera",
+      Daftar_Kerusakan: "Ganti Oli, Service Rutin, Rem"
     }];
     const csvString = Papa.unparse(templateData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
