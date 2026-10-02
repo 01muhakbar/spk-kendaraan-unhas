@@ -110,6 +110,7 @@ const EditSPK = () => {
     // Lembar 5
     tanggalMasukBengkel: '',
     masaGaransi: '',
+    pelaporType: 'Otomatis',
     penerimaType: 'Otomatis',
     tabelPekerjaanType: 'Otomatis',
     tabelPekerjaan: [{ jenisPekerjaan: '', satuan: '', kuantitas: '' }],
@@ -148,6 +149,7 @@ const EditSPK = () => {
           tanggalPersetujuan: spk.tanggalPersetujuan || '',
           tanggalMasukBengkel: spk.tanggalMasukBengkel || '',
           masaGaransi: spk.masaGaransi || '',
+          pelaporType: spk.pelaporType || 'Otomatis',
           penerimaType: spk.penerimaType || 'Otomatis',
           tabelPekerjaanType: spk.tabelPekerjaanType || 'Otomatis',
           tabelPekerjaan: parseJSON(spk.tabelPekerjaan, [{ jenisPekerjaan: '', satuan: '', kuantitas: '' }])
@@ -342,6 +344,14 @@ const EditSPK = () => {
             <div className="md:col-span-2">
               <label className={labelClass}>Nama Sopir / Pengguna <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
               <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.nama_sopir?.toLowerCase() || '—'} />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className={labelClass}>Pengisian Nama "Yang Melaporkan/Sopir"</label>
+              <select className={inputClass} value={formData.pelaporType} onChange={e => setFormData({ ...formData, pelaporType: e.target.value })}>
+                <option value="Otomatis">Otomatis (Tercetak Nama Sopir)</option>
+                <option value="Manual">Manual (.........................................)</option>
+              </select>
             </div>
           </div>
         </div>
