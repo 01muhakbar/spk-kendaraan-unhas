@@ -52,7 +52,10 @@ router.get('/', async (req, res) => {
         { model: Vehicle, as: 'vehicle' },
         { model: VendorMaster, as: 'vendor' }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [
+        ['tahun', 'DESC'],
+        ['nomorUrut', 'DESC']
+      ]
     });
     res.json(data);
   } catch (error) {
