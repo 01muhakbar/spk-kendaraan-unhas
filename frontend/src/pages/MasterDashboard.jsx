@@ -196,6 +196,42 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     return err.message || 'Terjadi kesalahan sistem.';
   };
 
+  const renderPaginationButtons = (currentPage, totalPages, setPageFn) => {
+    let pages = [];
+    if (totalPages <= 7) {
+      pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    } else {
+      if (currentPage <= 4) {
+        pages = [1, 2, 3, 4, 5, '...', totalPages];
+      } else if (currentPage >= totalPages - 3) {
+        pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      } else {
+        pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+      }
+    }
+
+    return (
+      <div className="flex space-x-1 mx-2">
+        {pages.map((p, i) => (
+          <button
+            key={i}
+            onClick={() => p !== '...' && setPageFn(p)}
+            disabled={p === '...'}
+            className={`px-3 py-1 border rounded text-sm font-medium transition-colors ${
+              p === currentPage 
+                ? 'bg-blue-600 text-white border-blue-600' 
+                : p === '...' 
+                ? 'bg-transparent border-transparent text-gray-500 cursor-default px-1' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   // Vehicle
   const handleSaveVehicle = async (e) => {
     e.preventDefault();
@@ -891,6 +927,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         >
                           Sebelumnya
                         </button>
+                        {renderPaginationButtons(spkPage, totalSpkPages, setSpkPage)}
                         <button 
                           onClick={() => setSpkPage(p => Math.min(totalSpkPages, p + 1))}
                           disabled={spkPage === totalSpkPages}
@@ -972,6 +1009,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       >
                         Sebelumnya
                       </button>
+                      {renderPaginationButtons(vehiclePage, totalVehiclePages, setVehiclePage)}
                       <button 
                         onClick={() => setVehiclePage(p => Math.min(totalVehiclePages, p + 1))}
                         disabled={vehiclePage === totalVehiclePages}
