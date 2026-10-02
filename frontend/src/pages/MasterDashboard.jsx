@@ -307,11 +307,23 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
   const downloadSpkTemplate = () => {
     const templateData = [{
-      Nomor_SPK: "001/RT/P-Kend/2026",
-      Tanggal_Laporan: "2026-01-01",
-      Nomor_Polisi: "DD 1234 XX",
-      Nama_Bengkel: "Bengkel Sejahtera",
-      Daftar_Kerusakan: "Ganti Oli, Service Rutin, Rem"
+      Nomor_SPK: "217/RT/P-Kend/2026",
+      Tanggal_Laporan: "2026-04-23",
+      Nomor_Polisi: "DD 1926 XAY",
+      Nama_Bengkel: "PT Inovasi Benua Maritim",
+      Status: "DRAFT",
+      Daftar_Kerusakan: "Lahar roda depan, Termostat, Kampas rem depan",
+      nomorUrut: "217",
+      tahun: "2026",
+      tanggalPengecekan: "2026-04-23",
+      tanggalPersetujuan: "2026-04-23",
+      masaGaransi: "",
+      tanggalMasukBengkel: "2026-04-23",
+      penerimaType: "Manual",
+      pelaporType: "Manual",
+      tabelPekerjaanType: "Manual",
+      tanggal_laporan: "2026-04-23",
+      Rekomendasi: "Penggantian"
     }];
     const csvString = Papa.unparse(templateData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
