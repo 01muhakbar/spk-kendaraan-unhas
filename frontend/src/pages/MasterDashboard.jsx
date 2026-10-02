@@ -453,10 +453,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     const processData = async (parsedData) => {
       try {
         setLoading(true);
-        await axios.post(`${API}/spk/import`, parsedData);
-        setSuccessMsg('Data SPK berhasil diimpor!');
+        const res = await axios.post(`${API}/spk/import`, parsedData);
+        setSuccessMsg(res.data.message || 'Data SPK berhasil diimpor!');
         fetchData('spk');
-        setTimeout(() => setSuccessMsg(''), 5000);
+        setTimeout(() => setSuccessMsg(''), 8000); // 8 seconds to read longer messages
       } catch (err) {
         setErrorMsg(`Gagal mengimpor data: ${getErrorMessage(err)}`);
       } finally {

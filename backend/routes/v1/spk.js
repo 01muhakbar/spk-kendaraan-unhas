@@ -156,74 +156,84 @@ router.post('/import', async (req, res) => {
     importSchema.parse(rawDataArray);
 
     const processedDataArray = [];
+    const skippedRows = [];
 
     // Lakukan iterasi satu per satu karena ada async lookup ke database
     for (let i = 0; i < rawDataArray.length; i++) {
       const item = rawDataArray[i];
       const rowNumber = i + 1; // Untuk pesan error agar user friendly (bila baris di CSV)
 
-      // 1. Dukungan untuk format Human-Readable vs Machine-Readable
-      const nomorSPK = item.Nomor_SPK || item.nomorSPK;
-      const tanggalLaporan = item.Tanggal_Laporan || item.tanggalLaporan;
-      
-      if (!nomorSPK) throw new Error(`Nomor SPK wajib diisi pada baris ke-${rowNumber}`);
-      if (!tanggalLaporan) throw new Error(`Tanggal Laporan wajib diisi pada baris ke-${rowNumber}`);
-
-      // 2. Lookup Relasi Data (Vehicle dan Vendor)
-      let vehicleId = item.vehicleId;
-      if (item.Nomor_Polisi) {
-        const vehicle = await Vehicle.findOne({ where: { nomor_polisi: item.Nomor_Polisi } });
-        if (!vehicle) {
-          throw new Error(`Nomor Polisi '${item.Nomor_Polisi}' pada baris ke-${rowNumber} tidak ditemukan di Master Kendaraan.`);
-        }
-        vehicleId = vehicle.id;
-      }
-
-      let vendorId = item.vendorId;
-      if (item.Nama_Bengkel) {
-        const vendor = await VendorMaster.findOne({ where: { nama_bengkel: item.Nama_Bengkel } });
-        if (!vendor) {
-          throw new Error(`Nama Bengkel '${item.Nama_Bengkel}' pada baris ke-${rowNumber} tidak ditemukan di Master Bengkel.`);
-        }
-        vendorId = vendor.id;
-      }
-
-      if (!vehicleId) throw new Error(`Vehicle ID / Nomor Polisi wajib diisi pada baris ke-${rowNumber}`);
-      if (!vendorId) throw new Error(`Vendor ID / Nama Bengkel wajib diisi pada baris ke-${rowNumber}`);
-
-      // 3. Flattening dan Transformasi JSON (Daftar_Kerusakan)
-      let daftarKerusakan = item.daftarKerusakan || [];
-      let tabelPekerjaan = item.tabelPekerjaan || [];
-      let tabelPengecekan = item.tabelPengecekan || [];
-
-      if (item.Daftar_Kerusakan && typeof item.Daftar_Kerusakan === 'string') {
-        const kerusakanArrayStr = item.Daftar_Kerusakan.split(',').map(k => k.trim()).filter(Boolean);
+      try {
+        // 1. Dukungan untuk format Human-Readable vs Machine-Readable
+        const nomorSPK = item.Nomor_SPK || item.nomorSPK;
+        const tanggalLaporan = item.Tanggal_Laporan || item.tanggalLaporan;
         
-        daftarKerusakan = kerusakanArrayStr;
-        
-        tabelPekerjaan = kerusakanArrayStr.map(k => ({
-          jenisPekerjaan: k,
-          satuan: "",
-          kuantitas: ""
-        }));
+        if (!nomorSPK) throw new Error(`Nomor SPK wajib diisi.`);
+        if (!tanggalLaporan) throw new Error(`Tanggal Laporan wajib diisi.`);
 
-        tabelPengecekan = kerusakanArrayStr.map(k => ({
-          komponenRusak: k,
-          rekomendasi: "Perbaikan",
-          keterangan: ""
-        }));
+        // 2. Lookup Relasi Data (Vehicle dan Vendor)
+        let vehicleId = item.vehicleId;
+        if (item.Nomor_Polisi) {
+          const vehicle = await Vehicle.findOne({ where: { nomor_polisi: item.Nomor_Polisi } });
+          if (!vehicle) {
+            throw new Error(`Nomor Polisi '${item.Nomor_Polisi}' tidak terdaftar.`);
+          }
+          vehicleId = vehicle.id;
+        }
+
+        let vendorId = item.vendorId;
+        if (item.Nama_Bengkel) {
+          const vendor = await VendorMaster.findOne({ where: { nama_bengkel: item.Nama_Bengkel } });
+          if (!vendor) {
+            throw new Error(`Nama Bengkel '${item.Nama_Bengkel}' tidak terdaftar.`);
+          }
+          vendorId = vendor.id;
+        }
+
+        if (!vehicleId) throw new Error(`Nomor Polisi wajib diisi.`);
+        if (!vendorId) throw new Error(`Nama Bengkel wajib diisi.`);
+
+        // 3. Flattening dan Transformasi JSON (Daftar_Kerusakan)
+        let daftarKerusakan = item.daftarKerusakan || [];
+        let tabelPekerjaan = item.tabelPekerjaan || [];
+        let tabelPengecekan = item.tabelPengecekan || [];
+
+        if (item.Daftar_Kerusakan && typeof item.Daftar_Kerusakan === 'string') {
+          // Dukungan pemisahan dengan koma atau newline, serta membersihkan penomoran (cth: "1. ")
+          const kerusakanArrayStr = item.Daftar_Kerusakan.split(/[\n,]+/).map(k => k.trim().replace(/^[0-9]+\.\s*/, '')).filter(Boolean);
+          
+          daftarKerusakan = kerusakanArrayStr;
+          
+          tabelPekerjaan = kerusakanArrayStr.map(k => ({
+            jenisPekerjaan: k,
+            satuan: "",
+            kuantitas: ""
+          }));
+
+          tabelPengecekan = kerusakanArrayStr.map(k => ({
+            komponenRusak: k,
+            rekomendasi: "Perbaikan",
+            keterangan: ""
+          }));
+        }
+
+        processedDataArray.push({
+          ...item,
+          nomorSPK,
+          tanggalLaporan,
+          vehicleId,
+          vendorId,
+          daftarKerusakan,
+          tabelPekerjaan,
+          tabelPengecekan
+        });
+      } catch (err) {
+        skippedRows.push(`Baris ${rowNumber}: ${err.message}`);
       }
+    }
 
-      processedDataArray.push({
-        ...item,
-        nomorSPK,
-        tanggalLaporan,
-        vehicleId,
-        vendorId,
-        daftarKerusakan,
-        tabelPekerjaan,
-        tabelPengecekan
-      });
+    if (processedDataArray.length === 0) {
+      throw new Error(`Semua baris gagal divalidasi. Tidak ada data yang diimpor.\n\nDetail:\n${skippedRows.slice(0, 5).join('\n')}${skippedRows.length > 5 ? '\n...' : ''}`);
     }
 
     // 4. Logika Upsert
@@ -250,7 +260,13 @@ router.post('/import', async (req, res) => {
     });
     
     await transaction.commit();
-    res.status(200).json({ message: "Data berhasil diimpor" });
+
+    let finalMessage = `Berhasil mengimpor ${processedDataArray.length} data.`;
+    if (skippedRows.length > 0) {
+      finalMessage += ` Terdapat ${skippedRows.length} baris gagal diabaikan (karena Nomor Polisi / Bengkel tidak terdaftar).`;
+    }
+
+    res.status(200).json({ message: finalMessage, skipped: skippedRows });
   } catch (error) {
     if (transaction) await transaction.rollback();
     if (error instanceof z.ZodError) {
