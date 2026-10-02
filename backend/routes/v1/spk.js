@@ -145,6 +145,7 @@ router.post('/import', async (req, res) => {
       Nomor_Polisi: z.string().min(1).optional(),
       Nama_Bengkel: z.string().min(1).optional(),
       Daftar_Kerusakan: z.string().min(1).optional(),
+      Rekomendasi: z.string().optional(),
       vehicleId: z.string().uuid().optional(),
       vendorId: z.string().uuid().optional(),
     }).passthrough().refine(data => data.Nomor_SPK || data.nomorSPK, { message: "Nomor SPK wajib diisi" })
@@ -212,7 +213,7 @@ router.post('/import', async (req, res) => {
 
           tabelPengecekan = kerusakanArrayStr.map(k => ({
             komponenRusak: k,
-            rekomendasi: "Perbaikan",
+            rekomendasi: item.Rekomendasi || "Perbaikan",
             keterangan: ""
           }));
         }
