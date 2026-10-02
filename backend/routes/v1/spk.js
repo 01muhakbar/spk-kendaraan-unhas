@@ -302,6 +302,25 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// DELETE - hapus massal SPK
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Tidak ada SPK yang dipilih untuk dihapus" });
+    }
+    
+    await SPK.destroy({ 
+      where: { id: { [Op.in]: ids } }, 
+      force: true 
+    });
+    
+    res.json({ message: `${ids.length} SPK berhasil dihapus secara permanen.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE — hapus SPK secara permanen (hard delete) agar nomor SPK bisa digunakan kembali
 router.delete('/:id', async (req, res) => {
   try {

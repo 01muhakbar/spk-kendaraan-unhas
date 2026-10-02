@@ -370,6 +370,22 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     link.click();
   };
 
+  const handleBulkDeleteSPK = async () => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSpkIds.length} SPK secara permanen? Tindakan ini tidak dapat dibatalkan.`)) return;
+    
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API}/spk/bulk-delete`, { ids: selectedSpkIds });
+      setSuccessMsg(res.data.message || 'SPK terpilih berhasil dihapus.');
+      setSelectedSpkIds([]);
+      fetchData('spk');
+    } catch (err) {
+      setErrorMsg(`Gagal menghapus massal: ${getErrorMessage(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBulkDownload = async () => {
     setIsDownloading(true);
     setDownloadProgress({ current: 0, total: selectedSpkIds.length });
@@ -1427,20 +1443,29 @@ const MasterDashboard = ({ onSettingsSaved }) => {
             </span>
             <span className="font-medium text-sm md:text-base">SPK Terpilih</span>
           </div>
-          <button 
-            onClick={handleBulkDownload} 
-            disabled={isDownloading}
-            className="bg-white text-blue-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm"
-          >
-            {isDownloading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                Memproses {downloadProgress.current}/{downloadProgress.total}...
-              </>
-            ) : (
-              <>📥 Unduh ZIP</>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleBulkDeleteSPK} 
+              disabled={isDownloading || loading}
+              className="bg-red-50 text-red-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-red-100 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm border border-red-200"
+            >
+              🗑️ Hapus
+            </button>
+            <button 
+              onClick={handleBulkDownload} 
+              disabled={isDownloading || loading}
+              className="bg-white text-blue-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm"
+            >
+              {isDownloading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  Memproses {downloadProgress.current}/{downloadProgress.total}...
+                </>
+              ) : (
+                <>📥 Unduh ZIP</>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
