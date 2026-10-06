@@ -222,8 +222,10 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                   onChange={selected => setFormData({...formData, vehicleId: selected ? selected.value : ''})}
                   placeholder="-- Cari/Pilih Kendaraan --"
                   isClearable
+                  menuPortalTarget={document.body}
                   styles={{ 
-                    control: (base) => ({ ...base, minHeight: '42px', borderRadius: '0.375rem', borderColor: '#d1d5db' })
+                    control: (base) => ({ ...base, minHeight: '42px', borderRadius: '0.375rem', borderColor: '#d1d5db' }),
+                    menuPortal: base => ({ ...base, zIndex: 9999 })
                   }}
                   required={true}
                 />
