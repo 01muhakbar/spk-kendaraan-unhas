@@ -123,7 +123,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         const res = await axios.get(`${API}/spk`);
         if (request !== loadRequest.current) return;
         setSpks(res.data);
-      } else if (tab === 'vehicles') {
+      } else if (tab === 'vehicles' || tab === 'legalitas') {
         const res = await axios.get(`${API}/vehicles`, { params: { search: vehicleSearchQuery } });
         if (request !== loadRequest.current) return;
         setVehicles(res.data);
