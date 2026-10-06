@@ -11,14 +11,17 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState(null);
   
-  const [formData, setFormData] = useState({
+  const initialForm = {
     vehicleId: '',
     jenisPengurusan: 'PAJAK_1_TAHUN',
     tanggalPembayaran: new Date().toISOString().split('T')[0],
     biayaPengurusan: '',
     dokumenBuktiUrl: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialForm);
 
   const fetchRiwayat = async () => {
     try {
@@ -41,24 +44,59 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const res = await axios.post(`${API}/legalitas`, formData);
-      setSuccessMsg(res.data.message);
-      setShowModal(false);
+      if (editId) {
+        const res = await axios.put(`${API}/legalitas/${editId}`, formData);
+        setSuccessMsg(res.data.message);
+      } else {
+        const res = await axios.post(`${API}/legalitas`, formData);
+        setSuccessMsg(res.data.message);
+      }
       
-      // Update vehicles in the parent component locally to avoid full fetch
-      setVehicles(prev => prev.map(v => {
-        if (v.id === formData.vehicleId) {
-          // just marking it active, full refresh should ideally happen
-          return { ...v, status_legalitas: 'AKTIF' };
-        }
-        return v;
-      }));
-
+      setShowModal(false);
+      fetchRiwayat();
+      
+      if (!editId) {
+        // Update vehicles in the parent component locally to avoid full fetch (only on create)
+        setVehicles(prev => prev.map(v => {
+          if (v.id === formData.vehicleId) {
+            return { ...v, status_legalitas: 'AKTIF' };
+          }
+          return v;
+        }));
+      }
     } catch (err) {
       setErrorMsg(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data riwayat ini?")) return;
+    try {
+      await axios.delete(`${API}/legalitas/${id}`);
+      setSuccessMsg("Riwayat berhasil dihapus.");
+      fetchRiwayat();
+    } catch (err) {
+      setErrorMsg("Gagal menghapus riwayat: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const openModal = (riwayatData = null) => {
+    if (riwayatData) {
+      setEditId(riwayatData.id);
+      setFormData({
+        vehicleId: riwayatData.vehicleId,
+        jenisPengurusan: riwayatData.jenis_pengurusan,
+        tanggalPembayaran: riwayatData.tanggal_pembayaran,
+        biayaPengurusan: riwayatData.biaya_pengurusan,
+        dokumenBuktiUrl: riwayatData.bukti_dokumen_url || ''
+      });
+    } else {
+      setEditId(null);
+      setFormData(initialForm);
+    }
+    setShowModal(true);
   };
 
   const getUrgentVehicles = () => {
@@ -74,7 +112,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
           <h2 className="text-xl font-bold">Papan Kerja Pengurusan Legalitas</h2>
           <p className="text-sm text-gray-500">Kelola pajak tahunan dan pergantian plat 5 tahunan kendaraan dinas.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">
+        <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">
           + Proses Pembayaran
         </button>
       </div>
@@ -150,8 +188,8 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                   <td className="p-3 text-center">
                     <button 
                       onClick={() => {
-                        setFormData({ ...formData, vehicleId: v.id });
-                        setShowModal(true);
+                        openModal();
+                        setFormData(prev => ({ ...prev, vehicleId: v.id }));
                       }}
                       className="bg-green-100 text-green-700 px-3 py-1 rounded font-semibold text-xs hover:bg-green-200"
                     >
@@ -182,6 +220,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                 <th className="p-3">Jenis Pengurusan</th>
                 <th className="p-3">Biaya</th>
                 <th className="p-3 text-center">Bukti Dokumen</th>
+                <th className="p-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -196,11 +235,15 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                       <a href={r.bukti_dokumen_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">Lihat</a>
                     ) : '-'}
                   </td>
+                  <td className="p-3 text-center space-x-2">
+                    <button onClick={() => openModal(r)} className="text-gray-600 hover:text-green-600 transition-colors" title="Edit">✏️</button>
+                    <button onClick={() => handleDelete(r.id)} className="text-gray-600 hover:text-red-600 transition-colors" title="Hapus">🗑️</button>
+                  </td>
                 </tr>
               ))}
               {riwayat.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-gray-500">Belum ada riwayat pembayaran.</td>
+                  <td colSpan="6" className="p-6 text-center text-gray-500">Belum ada riwayat pembayaran.</td>
                 </tr>
               )}
             </tbody>
@@ -212,7 +255,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-4">Proses Pembayaran Pajak</h3>
+            <h3 className="text-lg font-bold mb-4">{editId ? 'Edit Pembayaran Pajak' : 'Proses Pembayaran Pajak'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="block text-xs font-semibold mb-1 text-gray-600">Pilih Kendaraan</label>

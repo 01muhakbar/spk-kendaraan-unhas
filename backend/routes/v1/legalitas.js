@@ -77,4 +77,37 @@ router.get('/riwayat', async (req, res) => {
   }
 });
 
+// PUT /api/v1/legalitas/:id - Update riwayat pembayaran
+router.put('/:id', async (req, res) => {
+  try {
+    const record = await RiwayatLegalitas.findByPk(req.params.id);
+    if (!record) return res.status(404).json({ error: "Data tidak ditemukan" });
+
+    const { jenisPengurusan, tanggalPembayaran, biayaPengurusan, dokumenBuktiUrl } = req.body;
+    
+    await record.update({
+      jenis_pengurusan: jenisPengurusan,
+      tanggal_pembayaran: tanggalPembayaran,
+      biaya_pengurusan: biayaPengurusan,
+      bukti_dokumen_url: dokumenBuktiUrl || null
+    });
+
+    res.json({ message: "Riwayat pembayaran berhasil diperbarui", data: record });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/v1/legalitas/:id - Hapus riwayat pembayaran
+router.delete('/:id', async (req, res) => {
+  try {
+    const record = await RiwayatLegalitas.findByPk(req.params.id);
+    if (!record) return res.status(404).json({ error: "Data tidak ditemukan" });
+    await record.destroy();
+    res.json({ message: "Riwayat pembayaran berhasil dihapus" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
