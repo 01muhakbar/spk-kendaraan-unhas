@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Select from 'react-select';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -215,17 +216,17 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="block text-xs font-semibold mb-1 text-gray-600">Pilih Kendaraan</label>
-                <select 
-                  required 
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring focus:ring-blue-200"
-                  value={formData.vehicleId}
-                  onChange={e => setFormData({...formData, vehicleId: e.target.value})}
-                >
-                  <option value="">-- Pilih Kendaraan --</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.nomor_polisi} - {v.merek_type}</option>
-                  ))}
-                </select>
+                <Select 
+                  options={vehicles.map(v => ({ value: v.id, label: `${v.nomor_polisi} - ${v.merek_type}` }))}
+                  value={vehicles.map(v => ({ value: v.id, label: `${v.nomor_polisi} - ${v.merek_type}` })).find(opt => opt.value.toString() === formData.vehicleId?.toString()) || null}
+                  onChange={selected => setFormData({...formData, vehicleId: selected ? selected.value : ''})}
+                  placeholder="-- Cari/Pilih Kendaraan --"
+                  isClearable
+                  styles={{ 
+                    control: (base) => ({ ...base, minHeight: '42px', borderRadius: '0.375rem', borderColor: '#d1d5db' })
+                  }}
+                  required={true}
+                />
               </div>
 
               <div className="mb-3">
