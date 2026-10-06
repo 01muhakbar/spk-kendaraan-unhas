@@ -4,6 +4,7 @@ const Signatory = require('./Signatory');
 const VendorMaster = require('./VendorMaster');
 const SPK = require('./SPK');
 const SystemSetting = require('./SystemSetting');
+const RiwayatLegalitas = require('./RiwayatLegalitas');
 
 // Register every model before schema preparation or request handling.
 const syncDatabase = async () => {
@@ -17,3 +18,4 @@ module.exports.Signatory = Signatory;
 module.exports.VendorMaster = VendorMaster;
 module.exports.SPK = SPK;
 module.exports.SystemSetting = SystemSetting;
+module.exports.RiwayatLegalitas = RiwayatLegalitas;

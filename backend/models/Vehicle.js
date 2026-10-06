@@ -22,6 +22,18 @@ const Vehicle = sequelize.define('Vehicle', {
   nama_sopir: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  tgl_jatuh_tempo_pajak: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  tgl_jatuh_tempo_stnk: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  status_legalitas: {
+    type: DataTypes.ENUM('AKTIF', 'WARNING', 'EXPIRED'),
+    defaultValue: 'AKTIF'
   }
 }, {
   tableName: 'master_vehicles',
