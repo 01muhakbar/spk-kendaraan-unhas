@@ -5,6 +5,8 @@ import axios from 'axios';
 import Papa from 'papaparse';
 import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchLembar } from '../settings';
 import PrintSPK from './PrintSPK';
+import ModulLegalitas from './ModulLegalitas';
+import BudgetWidget from './BudgetWidget';
 import JSZip from 'jszip';
 import html2pdf from 'html2pdf.js';
 
@@ -784,12 +786,15 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         </Link>
       </div>
 
+      <BudgetWidget />
+
       {/* Tabs */}
       <div className="bg-white rounded-t-lg shadow-sm border-b border-gray-200 flex overflow-x-auto [&::-webkit-scrollbar]:hidden">
         <button onClick={() => setActiveTab('spk')} className={tabClass('spk')}>Riwayat SPK</button>
         <button onClick={() => setActiveTab('vehicles')} className={tabClass('vehicles')}>Master Kendaraan</button>
         <button onClick={() => setActiveTab('signatories')} className={tabClass('signatories')}>Master Pejabat & Teknisi</button>
         <button onClick={() => setActiveTab('vendors')} className={tabClass('vendors')}>Master Bengkel</button>
+        <button onClick={() => setActiveTab('legalitas')} className={tabClass('legalitas')}>Manajemen Legalitas</button>
         <button onClick={() => setActiveTab('settings')} className={tabClass('settings')}>Pengaturan Sistem</button>
       </div>
 
@@ -991,6 +996,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         <th className="p-3 whitespace-nowrap">Merek / Type</th>
                         <th className="p-3 whitespace-nowrap hidden md:table-cell">Jenis Kendaraan</th>
                         <th className="p-3 whitespace-nowrap">Pengguna / Sopir</th>
+                        <th className="p-3 whitespace-nowrap">Status Legalitas</th>
                         <th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
@@ -1001,6 +1007,15 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                           <td className="p-3 capitalize">{v.merek_type?.toLowerCase()}</td>
                           <td className="p-3 hidden md:table-cell capitalize">{v.jenis_kendaraan?.toLowerCase()}</td>
                           <td className="p-3 capitalize">{v.nama_sopir?.toLowerCase()}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                              v.status_legalitas === 'AKTIF' ? 'bg-green-100 text-green-700' :
+                              v.status_legalitas === 'WARNING' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {v.status_legalitas === 'WARNING' ? 'Pajak < 30 Hari' : (v.status_legalitas || 'AKTIF')}
+                            </span>
+                          </td>
                           <td className="p-3 text-center space-x-4">
                             <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors" title="Edit">✏️</button>
                             <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors" title="Hapus">🗑️</button>
@@ -1108,6 +1123,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                   </table>
                 </div>
               </div>
+            )}
+            {/* TAB: LEGALITAS */}
+            {activeTab === 'legalitas' && (
+              <ModulLegalitas vehicles={vehicles} setVehicles={setVehicles} />
             )}
             {/* TAB: SETTINGS */}
             {activeTab === 'settings' && (

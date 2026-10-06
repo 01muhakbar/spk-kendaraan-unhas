@@ -9,6 +9,10 @@ const signatoryRoutes = require('./routes/v1/signatories');
 const vendorRoutes = require('./routes/v1/vendors');
 const spkRoutes = require('./routes/v1/spk');
 const settingsRoutes = require('./routes/v1/settings');
+const legalitasRoutes = require('./routes/v1/legalitas');
+
+// Setup Cron Jobs
+require('./cron/legalitasCron');
 
 const app = express();
 
@@ -24,6 +28,8 @@ app.use('/api/v1/signatories', signatoryRoutes);
 app.use('/api/v1/vendors', vendorRoutes);
 app.use('/api/v1/spk', spkRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/legalitas', legalitasRoutes);
+app.use('/api/v1/analytics', require('./routes/v1/analytics'));
 
 // Endpoint khusus untuk Sinkronisasi Database di Production
 // Membantu membuat tabel yang kurang tanpa perlu CLI
@@ -35,6 +41,7 @@ app.get('/api/v1/force-sync', async (req, res) => {
     require('./models/VendorMaster');
     require('./models/Signatory');
     require('./models/SPK');
+    require('./models/RiwayatLegalitas');
     const sequelize = require('./config/database');
     
     try {

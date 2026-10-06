@@ -277,12 +277,27 @@ const CreateSPK = () => {
   const sectionClass = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm";
   const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
 
-  const ErrorAlert = () => errorMsg ? (
-    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-sm text-red-700 rounded-r shadow-sm">
-      <p className="font-bold">Error!</p>
-      <p>{errorMsg}</p>
-    </div>
-  ) : null;
+  const ErrorAlert = () => {
+    if (errorMsg) {
+      return (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-sm text-red-700 rounded-r shadow-sm">
+          <p className="font-bold">Error!</p>
+          <p>{errorMsg}</p>
+        </div>
+      );
+    }
+    
+    if (selectedKendaraan?.status_legalitas === 'EXPIRED') {
+      return (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-sm text-red-700 rounded-r shadow-sm">
+          <p className="font-bold">Peringatan Legalitas!</p>
+          <p>SPK tidak dapat diterbitkan. Pajak kendaraan ini telah mati (EXPIRED). Harap selesaikan administrasi legalitas terlebih dahulu di Menu Manajemen Legalitas.</p>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -538,8 +553,8 @@ const CreateSPK = () => {
           </button>
           <button
             type="submit"
-            disabled={submitting}
-            className="bg-blue-600 text-white px-10 py-3.5 rounded-xl font-bold text-base hover:bg-blue-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform"
+            disabled={submitting || selectedKendaraan?.status_legalitas === 'EXPIRED'}
+            className="bg-blue-600 text-white px-10 py-3.5 rounded-xl font-bold text-base hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform"
           >
             {submitting ? 'Menyimpan...' : '💾 Simpan & Lihat Pratinjau Cetak'}
           </button>
