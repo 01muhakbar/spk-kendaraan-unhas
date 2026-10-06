@@ -16,6 +16,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
   const initialForm = {
     vehicleId: '',
     jenisPengurusan: 'PAJAK_1_TAHUN',
+    nomorPolisiBaru: '',
     tanggalPembayaran: new Date().toISOString().split('T')[0],
     biayaPengurusan: '',
     dokumenBuktiUrl: ''
@@ -59,7 +60,11 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
         // Update vehicles in the parent component locally to avoid full fetch (only on create)
         setVehicles(prev => prev.map(v => {
           if (v.id === formData.vehicleId) {
-            return { ...v, status_legalitas: 'AKTIF' };
+            return { 
+              ...v, 
+              status_legalitas: 'AKTIF',
+              ...(formData.nomorPolisiBaru ? { nomor_polisi: formData.nomorPolisiBaru.toUpperCase() } : {})
+            };
           }
           return v;
         }));
@@ -88,6 +93,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
       setFormData({
         vehicleId: riwayatData.vehicleId,
         jenisPengurusan: riwayatData.jenis_pengurusan,
+        nomorPolisiBaru: '',
         tanggalPembayaran: riwayatData.tanggal_pembayaran,
         biayaPengurusan: riwayatData.biaya_pengurusan,
         dokumenBuktiUrl: riwayatData.bukti_dokumen_url || ''
@@ -228,7 +234,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                 <tr key={r.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{r.tanggal_pembayaran}</td>
                   <td className="p-3 font-bold">{r.vehicle?.nomor_polisi}</td>
-                  <td className="p-3">{r.jenis_pengurusan === 'PAJAK_1_TAHUN' ? 'Pajak Tahunan' : 'Ganti Plat 5 Tahun'}</td>
+                  <td className="p-3">{r.jenis_pengurusan === 'PAJAK_1_TAHUN' ? 'Pajak Tahunan' : r.jenis_pengurusan === 'PLAT_5_TAHUN' ? 'Ganti Plat 5 Tahun' : 'Pajak 1 Tahun & Plat 5 Tahun'}</td>
                   <td className="p-3">Rp {r.biaya_pengurusan.toLocaleString('id-ID')}</td>
                   <td className="p-3 text-center">
                     {r.bukti_dokumen_url ? (
@@ -283,8 +289,24 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                 >
                   <option value="PAJAK_1_TAHUN">Pajak Tahunan (1 Tahun)</option>
                   <option value="PLAT_5_TAHUN">Pergantian Plat (5 Tahun)</option>
+                  <option value="PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN">Pajak Tahunan (1 Tahun) dan Pergantian Plat (5 Tahun)</option>
                 </select>
               </div>
+
+              {['PLAT_5_TAHUN', 'PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN'].includes(formData.jenisPengurusan) && (
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">Nomor Polisi Baru <span className="text-red-500">*</span></label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Contoh: DD 1234 XY"
+                    className="w-full border rounded px-3 py-2 text-sm focus:ring focus:ring-blue-200 uppercase"
+                    value={formData.nomorPolisiBaru}
+                    onChange={e => setFormData({...formData, nomorPolisiBaru: e.target.value.toUpperCase()})}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Sistem akan otomatis memperbarui data nomor polisi kendaraan di Master Kendaraan.</p>
+                </div>
+              )}
 
               <div className="mb-3">
                 <label className="block text-xs font-semibold mb-1 text-gray-600">Tanggal Pembayaran</label>

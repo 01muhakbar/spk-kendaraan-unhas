@@ -12,7 +12,7 @@ const RiwayatLegalitas = sequelize.define('RiwayatLegalitas', {
     allowNull: false
   },
   jenis_pengurusan: {
-    type: DataTypes.ENUM('PAJAK_1_TAHUN', 'PLAT_5_TAHUN'),
+    type: DataTypes.STRING,
     allowNull: false
   },
   tanggal_pembayaran: {

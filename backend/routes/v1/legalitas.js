@@ -9,10 +9,16 @@ router.post('/', async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { vehicleId, jenisPengurusan, tanggalPembayaran, biayaPengurusan, dokumenBuktiUrl } = req.body;
+    const { vehicleId, jenisPengurusan, tanggalPembayaran, biayaPengurusan, dokumenBuktiUrl, nomorPolisiBaru } = req.body;
 
     if (!vehicleId || !jenisPengurusan || !tanggalPembayaran || biayaPengurusan == null) {
       throw new Error("Lengkapi data yang diwajibkan");
+    }
+
+    if (['PLAT_5_TAHUN', 'PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN'].includes(jenisPengurusan)) {
+      if (!nomorPolisiBaru || nomorPolisiBaru.trim() === '') {
+        throw new Error("Nomor Polisi baru wajib diisi untuk pergantian plat");
+      }
     }
 
     // 1. Ambil data kendaraan saat ini
@@ -37,16 +43,24 @@ router.post('/', async (req, res) => {
     if (jenisPengurusan === 'PAJAK_1_TAHUN') {
       perpanjanganPajak.add(1, 'years');
     } else if (jenisPengurusan === 'PLAT_5_TAHUN') {
+      perpanjanganStnk.add(5, 'years');
+    } else if (jenisPengurusan === 'PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN') {
       perpanjanganPajak.add(1, 'years');
       perpanjanganStnk.add(5, 'years');
     }
 
-    // 4. Update tabel Master Kendaraan (Reset status menjadi AKTIF)
-    await vehicle.update({
+    // 4. Update tabel Master Kendaraan (Reset status menjadi AKTIF dan update nomor polisi jika ada)
+    const updateData = {
       tgl_jatuh_tempo_pajak: perpanjanganPajak.format('YYYY-MM-DD'),
       tgl_jatuh_tempo_stnk: perpanjanganStnk.format('YYYY-MM-DD'),
       status_legalitas: 'AKTIF'
-    }, { transaction: t });
+    };
+
+    if (['PLAT_5_TAHUN', 'PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN'].includes(jenisPengurusan) && nomorPolisiBaru) {
+      updateData.nomor_polisi = nomorPolisiBaru.toUpperCase();
+    }
+
+    await vehicle.update(updateData, { transaction: t });
 
     // 5. Commit transaksi jika semua langkah berhasil
     await t.commit();
@@ -83,7 +97,7 @@ router.put('/:id', async (req, res) => {
     const record = await RiwayatLegalitas.findByPk(req.params.id);
     if (!record) return res.status(404).json({ error: "Data tidak ditemukan" });
 
-    const { jenisPengurusan, tanggalPembayaran, biayaPengurusan, dokumenBuktiUrl } = req.body;
+    const { jenisPengurusan, tanggalPembayaran, biayaPengurusan, dokumenBuktiUrl, nomorPolisiBaru } = req.body;
     
     await record.update({
       jenis_pengurusan: jenisPengurusan,
@@ -91,6 +105,14 @@ router.put('/:id', async (req, res) => {
       biaya_pengurusan: biayaPengurusan,
       bukti_dokumen_url: dokumenBuktiUrl || null
     });
+
+    // Update vehicle's nomor polisi if applicable
+    if (['PLAT_5_TAHUN', 'PAJAK_1_TAHUN_DAN_PLAT_5_TAHUN'].includes(jenisPengurusan) && nomorPolisiBaru) {
+      const vehicle = await Vehicle.findByPk(record.vehicleId);
+      if (vehicle) {
+        await vehicle.update({ nomor_polisi: nomorPolisiBaru.toUpperCase() });
+      }
+    }
 
     res.json({ message: "Riwayat pembayaran berhasil diperbarui", data: record });
   } catch (error) {
