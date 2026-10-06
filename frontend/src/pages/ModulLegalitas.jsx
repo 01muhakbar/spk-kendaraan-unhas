@@ -175,7 +175,8 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
               <tr>
                 <th className="p-3">No. Polisi</th>
                 <th className="p-3">Merek / Type</th>
-                <th className="p-3">Jatuh Tempo Pajak</th>
+                <th className="p-3">Jatuh Tempo Pajak (1 Thn)</th>
+                <th className="p-3">Jatuh Tempo STNK (5 Thn)</th>
                 <th className="p-3">Status</th>
                 <th className="p-3 text-center">Aksi</th>
               </tr>
@@ -186,6 +187,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                   <td className="p-3 font-bold">{v.nomor_polisi}</td>
                   <td className="p-3">{v.merek_type}</td>
                   <td className="p-3">{v.tgl_jatuh_tempo_pajak || '-'}</td>
+                  <td className="p-3">{v.tgl_jatuh_tempo_stnk || '-'}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${v.status_legalitas === 'EXPIRED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                       {v.status_legalitas}
@@ -206,7 +208,7 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
               ))}
               {getUrgentVehicles().length === 0 && (
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-gray-500">
+                  <td colSpan="6" className="p-6 text-center text-gray-500">
                     Semua kendaraan dalam kondisi pajak aman.
                   </td>
                 </tr>
