@@ -3,8 +3,9 @@ const { Vehicle } = require('../models');
 const { Op } = require('sequelize');
 
 // Jalankan setiap tengah malam (0 0 * * *)
-cron.schedule('0 0 * * *', async () => {
-  console.log('[CRON] Menjalankan pengecekan status legalitas kendaraan...');
+if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[CRON] Menjalankan pengecekan status legalitas kendaraan...');
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -52,3 +53,4 @@ cron.schedule('0 0 * * *', async () => {
     console.error('[CRON] Gagal menjalankan pengecekan legalitas:', error);
   }
 });
+}

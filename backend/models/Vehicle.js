@@ -23,6 +23,28 @@ const Vehicle = sequelize.define('Vehicle', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  model: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  warna: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isi_silinder: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  no_rangka: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  no_mesin: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
   tgl_jatuh_tempo_pajak: {
     type: DataTypes.DATEONLY,
     allowNull: true

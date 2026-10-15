@@ -76,13 +76,28 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [spkToDelete, setSpkToDelete] = useState(null);
   
+  // Side Drawer Detail Kendaraan & STNK
+  const [selectedVehicleDetail, setSelectedVehicleDetail] = useState(null);
+  const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  
   // Edit & Error states
   const [editData, setEditData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   // Form Data States
-  const [vehicleForm, setVehicleForm] = useState({ nomor_polisi: '', merek_type: '', jenis_kendaraan: '', nama_sopir: '' });
+  const initialVehicleForm = {
+    nomor_polisi: '',
+    merek_type: '',
+    jenis_kendaraan: '',
+    nama_sopir: '',
+    model: '',
+    warna: '',
+    isi_silinder: '',
+    no_rangka: '',
+    no_mesin: ''
+  };
+  const [vehicleForm, setVehicleForm] = useState(initialVehicleForm);
   const [signatoryForm, setSignatoryForm] = useState({ nama_lengkap: '', nip_nik: '', jabatan: '', kategori_peran: 'TEKNISI' });
   const [vendorForm, setVendorForm] = useState({ nama_bengkel: '', alamat_kontak: '' });
 
@@ -175,7 +190,21 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     setErrorMsg('');
     setEditData(data);
     if (type === 'vehicle') {
-      setVehicleForm(data || { nomor_polisi: '', merek_type: '', jenis_kendaraan: '', nama_sopir: '' });
+      if (data) {
+        setVehicleForm({
+          nomor_polisi: data.nomor_polisi || '',
+          merek_type: data.merek_type || '',
+          jenis_kendaraan: data.jenis_kendaraan || '',
+          nama_sopir: data.nama_sopir || '',
+          model: data.model || '',
+          warna: data.warna || '',
+          isi_silinder: data.isi_silinder !== undefined && data.isi_silinder !== null ? data.isi_silinder : '',
+          no_rangka: data.no_rangka || '',
+          no_mesin: data.no_mesin || ''
+        });
+      } else {
+        setVehicleForm(initialVehicleForm);
+      }
       setShowVehicleModal(true);
     } else if (type === 'signatory') {
       setSignatoryForm(data || { nama_lengkap: '', nip_nik: '', jabatan: '', kategori_peran: 'TEKNISI' });
@@ -239,16 +268,34 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     e.preventDefault();
     setErrorMsg('');
     try {
+      const payload = {
+        ...vehicleForm,
+        nomor_polisi: (vehicleForm.nomor_polisi || '').trim().toUpperCase(),
+        merek_type: (vehicleForm.merek_type || '').trim(),
+        jenis_kendaraan: (vehicleForm.jenis_kendaraan || '').trim(),
+        nama_sopir: vehicleForm.nama_sopir?.trim() || null,
+        model: vehicleForm.model?.trim() || null,
+        warna: vehicleForm.warna?.trim() || null,
+        isi_silinder: vehicleForm.isi_silinder !== '' && vehicleForm.isi_silinder !== null ? parseInt(vehicleForm.isi_silinder, 10) : null,
+        no_rangka: vehicleForm.no_rangka?.trim() ? vehicleForm.no_rangka.trim().toUpperCase() : null,
+        no_mesin: vehicleForm.no_mesin?.trim() ? vehicleForm.no_mesin.trim().toUpperCase() : null
+      };
+
       if (editData) {
-        await axios.put(`${API}/vehicles/${editData.id}`, vehicleForm);
+        await axios.put(`${API}/vehicles/${editData.id}`, payload);
       } else {
-        await axios.post(`${API}/vehicles`, vehicleForm);
+        await axios.post(`${API}/vehicles`, payload);
       }
       setShowVehicleModal(false);
       fetchData('vehicles');
+      if (selectedVehicleDetail && editData && selectedVehicleDetail.id === editData.id) {
+        setSelectedVehicleDetail(prev => ({ ...prev, ...payload }));
+      }
     } catch (err) { 
       const errMsg = getErrorMessage(err);
-      if (errMsg.includes('Validation error')) {
+      if (err.response?.status === 409 || errMsg.includes('Nomor Rangka/Mesin sudah terdaftar')) {
+        setErrorMsg('Gagal menyimpan: Nomor Rangka/Mesin sudah terdaftar pada kendaraan lain.');
+      } else if (errMsg.includes('Validation error')) {
         setErrorMsg('Nomor Polisi tersebut sudah terdaftar di sistem.');
       } else {
         setErrorMsg(`Gagal menyimpan data kendaraan: ${errMsg}`);
@@ -570,7 +617,21 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   };
 
   const handleExportVehicleCSV = () => {
-    const csvString = Papa.unparse(vehicles);
+    const exportData = vehicles.map(v => ({
+      Nomor_Polisi: v.nomor_polisi || '',
+      Merek_Type: v.merek_type || '',
+      Jenis_Kendaraan: v.jenis_kendaraan || '',
+      Pengguna_Sopir: v.nama_sopir || '',
+      Model: v.model || '',
+      Warna: v.warna || '',
+      Isi_Silinder: v.isi_silinder != null ? `${v.isi_silinder} cc` : '',
+      No_Rangka: v.no_rangka || '',
+      No_Mesin: v.no_mesin || '',
+      Status_Legalitas: v.status_legalitas || 'AKTIF',
+      Tgl_Jatuh_Tempo_Pajak: v.tgl_jatuh_tempo_pajak || '',
+      Tgl_Jatuh_Tempo_STNK: v.tgl_jatuh_tempo_stnk || ''
+    }));
+    const csvString = Papa.unparse(exportData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -594,7 +655,12 @@ const MasterDashboard = ({ onSettingsSaved }) => {
           fetchData('vehicles');
           setTimeout(() => setSuccessMsg(''), 5000);
         } catch (err) {
-          setErrorMsg(`Gagal mengimpor data kendaraan: ${getErrorMessage(err)}`);
+          const errMsg = getErrorMessage(err);
+          if (err.response?.status === 409 || errMsg.includes('Nomor Rangka/Mesin sudah terdaftar')) {
+            setErrorMsg('Gagal mengimpor data kendaraan: Nomor Rangka/Mesin sudah terdaftar pada kendaraan lain.');
+          } else {
+            setErrorMsg(`Gagal mengimpor data kendaraan: ${errMsg}`);
+          }
         } finally {
           setLoading(false);
           if (vehicleFileInputRef.current) vehicleFileInputRef.current.value = '';
@@ -608,13 +674,23 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   };
 
   const downloadVehicleTemplate = () => {
-    const templateData = [{ nomor_polisi: "DD 1234 XX", merek_type: "Toyota Kijang", jenis_kendaraan: "Minibus", nama_sopir: "Budi" }];
+    const templateData = [{
+      Nomor_Polisi: "DD 1234 XX",
+      Merek_Type: "Toyota Innova Reborn",
+      Jenis_Kendaraan: "Minibus",
+      Pengguna_Sopir: "Budi Santoso",
+      Model: "Minibus",
+      Warna: "Hitam Metalik",
+      Isi_Silinder: 1998,
+      No_Rangka: "MHKW123456789",
+      No_Mesin: "1TR1234567"
+    }];
     const csvString = Papa.unparse(templateData);
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Template_Import_Kendaraan.csv";
+    link.download = "Template_Master_Kendaraan.csv";
     link.click();
   };
 
@@ -974,8 +1050,8 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <h2 className="text-xl font-bold">Data Kendaraan Dinas</h2>
                     <input
                       type="text"
-                      placeholder="Cari Nopol, Merek, atau Sopir..."
-                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Cari Nopol, Merek, Sopir, No. Rangka, No. Mesin..."
+                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={vehicleSearchQuery}
                       onChange={(e) => setVehicleSearchQuery(e.target.value)}
                     />
@@ -1016,9 +1092,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                               {v.status_legalitas === 'WARNING' ? 'Pajak < 30 Hari' : (v.status_legalitas || 'AKTIF')}
                             </span>
                           </td>
-                          <td className="p-3 text-center space-x-4">
-                            <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors" title="Edit">✏️</button>
-                            <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors" title="Hapus">🗑️</button>
+                          <td className="p-3 text-center space-x-3 whitespace-nowrap">
+                            <button onClick={() => { setSelectedVehicleDetail(v); setShowDetailDrawer(true); }} className="text-gray-600 hover:text-blue-600 transition-colors p-1 hover:bg-blue-50 rounded" title="Detail Legalitas (STNK)">👁️</button>
+                            <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors p-1 hover:bg-green-50 rounded" title="Edit">✏️</button>
+                            <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded" title="Hapus">🗑️</button>
                           </td>
                         </tr>
                       ))}
@@ -1380,29 +1457,336 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         </div>
       )}
 
-      {/* Modal Vehicle */}
+      {/* Modal Vehicle (Fase 2: Redesain UI Form Tambah/Edit Kendaraan 2 Kolom Grid) */}
       {showVehicleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-4">{editData ? 'Edit Kendaraan' : 'Tambah Kendaraan Baru'}</h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 md:p-8 rounded-xl w-full max-w-4xl shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">
+                  {editData ? 'Edit Kendaraan' : 'Tambah Kendaraan Baru'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Kelola data operasional dan legalitas STNK kendaraan dinas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVehicleModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Tutup Modal"
+              >
+                ✕
+              </button>
+            </div>
+
             <ErrorAlert />
-            <form onSubmit={handleSaveVehicle}>
-              <label className="block text-xs font-semibold mb-1 text-gray-600">Nomor Polisi</label>
-              <input type="text" required className={inputClass} value={vehicleForm.nomor_polisi} onChange={e => setVehicleForm({...vehicleForm, nomor_polisi: e.target.value})} placeholder="DD 1234 XX" />
-              <label className="block text-xs font-semibold mb-1 text-gray-600">Merek / Type</label>
-              <input type="text" required className={inputClass} value={vehicleForm.merek_type} onChange={e => setVehicleForm({...vehicleForm, merek_type: e.target.value})} placeholder="Toyota Innova" />
-              <label className="block text-xs font-semibold mb-1 text-gray-600">Jenis Kendaraan</label>
-              <input type="text" required className={inputClass} value={vehicleForm.jenis_kendaraan} onChange={e => setVehicleForm({...vehicleForm, jenis_kendaraan: e.target.value})} placeholder="Minibus / SUV" />
-              <label className="block text-xs font-semibold mb-1 text-gray-600">Nama Sopir / Pengguna</label>
-              <input type="text" className={inputClass} value={vehicleForm.nama_sopir} onChange={e => setVehicleForm({...vehicleForm, nama_sopir: e.target.value})} placeholder="Nama Lengkap" />
-              <div className="flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => setShowVehicleModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Batal</button>
-                <button type="submit" className={btnClass}>Simpan</button>
+
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSaveVehicle}>
+              {/* Kolom Kiri: Identitas Operasional */}
+              <div className="space-y-4 md:border-r md:pr-6">
+                <h3 className="font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+                  <span>🚗</span> Informasi Operasional
+                </h3>
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Nomor Polisi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className={`${inputClass} mb-0 uppercase`}
+                    value={vehicleForm.nomor_polisi}
+                    onChange={e => setVehicleForm({...vehicleForm, nomor_polisi: e.target.value.toUpperCase()})}
+                    placeholder="DD 1234 XX"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Format plat resmi (contoh: DD 1234 XX)</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Merek / Type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.merek_type}
+                    onChange={e => setVehicleForm({...vehicleForm, merek_type: e.target.value})}
+                    placeholder="Toyota Innova Reborn"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Jenis Kendaraan <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.jenis_kendaraan}
+                    onChange={e => setVehicleForm({...vehicleForm, jenis_kendaraan: e.target.value})}
+                    placeholder="Minibus / Sedan / SUV / Pick Up"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Nama Sopir / Pengguna
+                  </label>
+                  <input
+                    type="text"
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.nama_sopir || ''}
+                    onChange={e => setVehicleForm({...vehicleForm, nama_sopir: e.target.value})}
+                    placeholder="Nama Lengkap Sopir / Pengguna Dinas"
+                  />
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Identitas Sesuai STNK */}
+              <div className="space-y-4 md:pl-2">
+                <h3 className="font-semibold text-gray-700 border-b pb-2 flex items-center gap-2">
+                  <span>📄</span> Identitas Legal (STNK)
+                </h3>
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Model
+                  </label>
+                  <input
+                    type="text"
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.model || ''}
+                    onChange={e => setVehicleForm({...vehicleForm, model: e.target.value})}
+                    placeholder="Misal: Minibus"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Warna
+                  </label>
+                  <input
+                    type="text"
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.warna || ''}
+                    onChange={e => setVehicleForm({...vehicleForm, warna: e.target.value})}
+                    placeholder="Misal: Hitam Metalik"
+                  />
+                </div>
+
+                {/* Tambahkan suffix 'cc' menggunakan absolute positioning Tailwind */}
+                <div className="relative">
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Isi Silinder
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={`${inputClass} mb-0 pr-10`}
+                    value={vehicleForm.isi_silinder !== undefined && vehicleForm.isi_silinder !== null ? vehicleForm.isi_silinder : ''}
+                    onChange={e => setVehicleForm({...vehicleForm, isi_silinder: e.target.value})}
+                    placeholder="1500"
+                  />
+                  <span className="absolute right-3 top-8 text-gray-500 text-sm font-medium">cc</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Nomor Rangka
+                  </label>
+                  <input
+                    type="text"
+                    className={`${inputClass} mb-0 uppercase tracking-wide font-mono`}
+                    value={vehicleForm.no_rangka || ''}
+                    onChange={e => setVehicleForm({...vehicleForm, no_rangka: e.target.value.toUpperCase()})}
+                    placeholder="MHKW1234..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Nomor Mesin
+                  </label>
+                  <input
+                    type="text"
+                    className={`${inputClass} mb-0 uppercase tracking-wide font-mono`}
+                    value={vehicleForm.no_mesin || ''}
+                    onChange={e => setVehicleForm({...vehicleForm, no_mesin: e.target.value.toUpperCase()})}
+                    placeholder="1TR1234..."
+                  />
+                </div>
+              </div>
+
+              {/* Tombol Aksi membentang penuh di bawah */}
+              <div className="col-span-1 md:col-span-2 flex justify-end space-x-3 mt-4 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowVehicleModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className={`${btnClass} px-5 py-2 text-sm font-medium`}
+                >
+                  Simpan Kendaraan
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Side Drawer Detail Kendaraan & STNK (Fase 3: Tampilan Detail) */}
+      {showDetailDrawer && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity"
+          onClick={() => setShowDetailDrawer(false)}
+        />
+      )}
+      <aside
+        className={`fixed top-0 right-0 z-50 h-full w-full sm:w-96 md:w-[440px] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300 ease-in-out flex flex-col ${
+          showDetailDrawer && selectedVehicleDetail ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {selectedVehicleDetail && (
+          <>
+            {/* Drawer Header */}
+            <div className="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                  Detail Legalitas & STNK
+                </span>
+                <h3 className="text-lg font-bold text-gray-800 mt-1 flex items-center gap-2">
+                  <span>🚗</span> {selectedVehicleDetail.nomor_polisi}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDetailDrawer(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-200 transition-colors"
+                title="Tutup Detail"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* Card Status Legalitas */}
+              <div className="bg-white border rounded-xl p-4 shadow-xs">
+                <div className="flex items-center justify-between pb-3 border-b mb-3">
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Status Pajak & Legalitas</span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    selectedVehicleDetail.status_legalitas === 'AKTIF' ? 'bg-green-100 text-green-700 border border-green-200' :
+                    selectedVehicleDetail.status_legalitas === 'WARNING' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
+                    'bg-red-100 text-red-700 border border-red-200'
+                  }`}>
+                    {selectedVehicleDetail.status_legalitas === 'WARNING' ? 'Pajak < 30 Hari' : (selectedVehicleDetail.status_legalitas || 'AKTIF')}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-gray-400 block">Jatuh Tempo Pajak (1 Thn)</span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedVehicleDetail.tgl_jatuh_tempo_pajak || '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block">Jatuh Tempo STNK (5 Thn)</span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedVehicleDetail.tgl_jatuh_tempo_stnk || '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Data Operasional */}
+              <div className="bg-white border rounded-xl p-4 shadow-xs">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b flex items-center gap-1.5">
+                  <span>📋</span> Data Operasional
+                </h4>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Nomor Polisi:</span>
+                    <span className="font-bold text-gray-800">{selectedVehicleDetail.nomor_polisi}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Merek / Type:</span>
+                    <span className="font-medium text-gray-800">{selectedVehicleDetail.merek_type}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Jenis Kendaraan:</span>
+                    <span className="font-medium text-gray-800">{selectedVehicleDetail.jenis_kendaraan}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Pengguna / Sopir:</span>
+                    <span className="font-medium text-gray-800">{selectedVehicleDetail.nama_sopir || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Spesifikasi Legal STNK */}
+              <div className="bg-white border rounded-xl p-4 shadow-xs">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pb-2 border-b flex items-center gap-1.5">
+                  <span>📄</span> Identitas Legal (STNK)
+                </h4>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Model:</span>
+                    <span className="font-medium text-gray-800">{selectedVehicleDetail.model || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Warna:</span>
+                    <span className="font-medium text-gray-800">{selectedVehicleDetail.warna || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Isi Silinder:</span>
+                    <span className="font-medium text-gray-800">
+                      {selectedVehicleDetail.isi_silinder != null ? `${selectedVehicleDetail.isi_silinder} cc` : '-'}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <span className="text-gray-500 text-xs block mb-1">Nomor Rangka:</span>
+                    <span className="font-mono font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded border block text-xs tracking-wider break-all">
+                      {selectedVehicleDetail.no_rangka || '-'}
+                    </span>
+                  </div>
+                  <div className="pt-2">
+                    <span className="text-gray-500 text-xs block mb-1">Nomor Mesin:</span>
+                    <span className="font-mono font-semibold text-gray-800 bg-gray-50 px-2 py-1 rounded border block text-xs tracking-wider break-all">
+                      {selectedVehicleDetail.no_mesin || '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDetailDrawer(false);
+                  openModal('vehicle', selectedVehicleDetail);
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <span>✏️</span> Edit Kendaraan
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDetailDrawer(false)}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
 
       {/* Modal Signatory */}
       {showSignatoryModal && (

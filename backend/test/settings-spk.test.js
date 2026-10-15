@@ -109,9 +109,9 @@ function upload({ type = 'image/png', size = 32, field = 'logo' } = {}) {
   return json('/settings/logo', { method: 'POST', body: form });
 }
 
-test('all five models are registered before schema preparation', async () => {
-  assert.deepEqual(Object.keys(sequelize.models).sort(), ['SPK', 'Signatory', 'SystemSetting', 'Vehicle', 'VendorMaster']);
-  const sync = mock.method(sequelize, 'sync', async (...args) => assert.deepEqual(args, []));
+test('all models are registered before schema preparation', async () => {
+  assert.deepEqual(Object.keys(sequelize.models).sort(), ['RiwayatLegalitas', 'SPK', 'Signatory', 'SystemSetting', 'Vehicle', 'VendorMaster']);
+  const sync = mock.method(sequelize, 'sync', async (...args) => assert.deepEqual(args, [{ alter: true }]));
   await models.syncDatabase();
   assert.equal(sync.mock.callCount(), 1);
 });
