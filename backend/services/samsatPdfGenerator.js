@@ -139,12 +139,10 @@ const generateSamsatLetterPDF = async (data) => {
         currentRightY += 10;
       });
 
-      // Garis Pemisah (3px Solid Black di bawah kop surat)
-      const lineY = Math.max(doc.y, headerTop + 66) + 4;
-      doc.lineWidth(3).moveTo(leftMargin, lineY).lineTo(rightMargin, lineY).stroke('#000000');
-
       // ─── JUDUL DOKUMEN & METADATA SURAT ───
-      let yPos = lineY + 12;
+      // Sesuai arahan, garis hitam tebal di bawah kop surat ditiadakan
+      const headerBottom = Math.max(doc.y, headerTop + 66, currentRightY);
+      let yPos = headerBottom + 16;
 
       doc.font('Times-Bold').fontSize(11).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
         align: 'center',
@@ -275,31 +273,30 @@ const generateSamsatLetterPDF = async (data) => {
         leftMargin, yPos, { width: pageWidth, lineGap: 1.5 }
       );
 
-      // ─── TAHAP 3: EKSPANSI RUANG VERTIKAL (TABEL PENUTUP 50% - 50%: TEMBUSAN & TANDA TANGAN) ───
-      // Menggunakan satu tabel layouting besar: Kolom Kiri = Tembusan (bottom), Kolom Kanan = Tanda Tangan (top)
-      const closingTableTop = doc.y + 18;
+      // ─── TAHAP 3: BLOK TANDA TANGAN PEJABAT (SISI KANAN) & TEMBUSAN (DI BAWAH TANDA TANGAN) ───
+      const signTableTop = doc.y + 18;
       const col50Width = pageWidth * 0.50; // 50% (~257.5 pt)
       const leftColX = leftMargin; // Kolom Kiri
       const rightColX = leftMargin + col50Width; // Kolom Kanan
 
-      // Kolom Kanan: Tanda Tangan Pejabat (Pemberi Kuasa)
+      // Blok Kanan: Tanda Tangan Pejabat (Pemberi Kuasa)
       const dateText = `Makassar, ${formatTanggalIndo()}`;
-      doc.font('Times-Roman').fontSize(9.5).text(dateText, rightColX, closingTableTop, { width: col50Width, align: 'left' });
+      doc.font('Times-Roman').fontSize(9.5).text(dateText, rightColX, signTableTop, { width: col50Width, align: 'left' });
 
-      doc.text('Kepala Subdirektorat Kerumahtanggaan', rightColX, closingTableTop + 12, { width: col50Width, align: 'left' });
-      doc.text('dan Keprotokolan', rightColX, closingTableTop + 23, { width: col50Width, align: 'left' });
+      doc.text('Kepala Subdirektorat Kerumahtanggaan', rightColX, signTableTop + 12, { width: col50Width, align: 'left' });
+      doc.text('dan Keprotokolan', rightColX, signTableTop + 23, { width: col50Width, align: 'left' });
 
-      // 4 baris kosong (br) mutlak diperlukan untuk ruang stempel basah instansi & tanda tangan fisik (~55 pt)
-      const stampVerticalWhitespace = 55;
-      const signBaseY = closingTableTop + 35 + stampVerticalWhitespace;
+      // Ruang kosong untuk stempel basah instansi & tanda tangan fisik (~52 pt)
+      const stampVerticalWhitespace = 52;
+      const signBaseY = signTableTop + 35 + stampVerticalWhitespace;
       const pemberiNama = pemberiKuasa.nama || pemberiKuasa.nama_lengkap || '___________________';
       const pemberiNip = pemberiKuasa.nip || pemberiKuasa.nip_nik || '-';
 
       doc.font('Times-Bold').fontSize(9.5).text(pemberiNama, rightColX, signBaseY, { width: col50Width, align: 'left', underline: true });
       doc.font('Times-Roman').fontSize(9).text(`NIP. ${pemberiNip}`, rightColX, signBaseY + 12, { width: col50Width, align: 'left' });
 
-      // Kolom Kiri: Tembusan (vertical-align: bottom, sejajar dengan bagian bawah tanda tangan)
-      const tembusanY = signBaseY - 26;
+      // Blok Tembusan: Ditempatkan di sisi kiri BAWAH tanda tangan (tidak sejajar dengan tanda tangan)
+      const tembusanY = signBaseY + 28;
       doc.font('Times-Roman').fontSize(8.5).text('Tembusan:', leftColX, tembusanY);
       doc.text('1. Wakil Rektor Bidang Perencanaan, Keuangan, dan Prasarana.', leftColX, tembusanY + 11);
       doc.text('2. Direktur Komunikasi dan Kantor Sekretariat Rektor.', leftColX, tembusanY + 22);
