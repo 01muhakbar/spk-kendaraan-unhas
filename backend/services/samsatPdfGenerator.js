@@ -1,3 +1,5 @@
+// Ensure PDFKit standard fonts resolver is loaded first for Vercel Serverless
+require('./pdfkitFontResolver');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');

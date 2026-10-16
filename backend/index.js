@@ -1,3 +1,6 @@
+// Initialize PDFKit font resolver early for Vercel Serverless
+require('./services/pdfkitFontResolver');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

@@ -120,3 +120,19 @@ test('POST /legalitas/cetak-surat successfully returns PDF binary with correct h
   const header = Buffer.from(arrayBuffer.slice(0, 4)).toString('ascii');
   assert.equal(header, '%PDF');
 });
+
+test('pdfkitFontResolver successfully resolves missing font requests to local standard-fonts', () => {
+  const { localFontsDir } = require('../services/pdfkitFontResolver');
+  const fs = require('fs');
+  const path = require('path');
+
+  assert.ok(fs.existsSync(path.join(localFontsDir, 'Helvetica.cjs')));
+  assert.ok(fs.existsSync(path.join(localFontsDir, 'HelveticaBold.cjs')));
+  assert.ok(fs.existsSync(path.join(localFontsDir, 'TimesRoman.cjs')));
+  assert.ok(fs.existsSync(path.join(localFontsDir, 'TimesBold.cjs')));
+
+  // Test loading standard font via simulated serverless path
+  const simulatedPath = '/var/task/backend/node_modules/pdfkit/js/standard-fonts/Helvetica.cjs';
+  const resolvedFont = require(simulatedPath);
+  assert.equal(resolvedFont.name, 'Helvetica');
+});

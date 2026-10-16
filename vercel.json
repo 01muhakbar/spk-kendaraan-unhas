@@ -6,7 +6,16 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "index.js"
+      "entrypoint": "index.js",
+      "includeFiles": [
+        "fonts/**",
+        "public/**"
+      ]
+    }
+  },
+  "functions": {
+    "backend/index.js": {
+      "includeFiles": "backend/fonts/**"
     }
   },
   "rewrites": [
