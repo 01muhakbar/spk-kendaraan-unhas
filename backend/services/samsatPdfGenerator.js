@@ -153,17 +153,18 @@ const generateSamsatLetterPDF = async (data) => {
       const rightMargin = 555;
       const pageWidth = rightMargin - leftMargin; // 515 pt
 
-      // ─── KOP SURAT STANDAR UNHAS (IDENTIK DENGAN PRATINJAU DOKUMEN SPK) ───
-      const headerTop = 25;
-      const logoWidth = 68; // Proporsi logo UNHAS pas ~70px sejajar vertikal teks
+      // ─── KOP SURAT STANDAR UNHAS (PERSIS DENGAN PRATINJAU DOKUMEN SPK) ───
+      const headerTop = 26;
+      const logoWidth = 66; // Proporsi logo UNHAS (~90px di browser web)
+      const logoHeight = 66;
 
       // Kolom Kiri: Logo UNHAS
       if (logoBuffer) {
-        doc.image(logoBuffer, leftMargin, headerTop, { width: logoWidth, fit: [logoWidth, 68] });
+        doc.image(logoBuffer, leftMargin, headerTop, { width: logoWidth, fit: [logoWidth, logoHeight] });
       }
 
-      // Kolom Tengah: Teks Institusi (Berdampingan langsung dengan logo, gap ~12pt)
-      const centerLeft = leftMargin + logoWidth + 12; // 120 pt
+      // Kolom Tengah: Teks Institusi (Berdampingan langsung dengan logo, gap ~14pt)
+      const centerLeft = leftMargin + logoWidth + 14; // ~120 pt
       const centerWidth = 245;
 
       const kopKiri1 = kopSettings.KOP_KIRI_1 !== undefined ? kopSettings.KOP_KIRI_1 : 'KEMENTERIAN PENDIDIKAN TINGGI, SAINS,';
@@ -171,15 +172,37 @@ const generateSamsatLetterPDF = async (data) => {
       const kopKiri3 = kopSettings.KOP_KIRI_3 !== undefined ? kopSettings.KOP_KIRI_3 : 'UNIVERSITAS HASANUDDIN';
       const kopKiri4 = kopSettings.KOP_KIRI_4 !== undefined ? kopSettings.KOP_KIRI_4 : '';
 
-      doc.font('Times-Roman').fontSize(10).text(kopKiri1, centerLeft, headerTop + 3, { width: centerWidth, lineGap: 1.5 });
-      doc.text(kopKiri2, centerLeft, doc.y, { width: centerWidth, lineGap: 1.5 });
-      doc.font('Times-Bold').fontSize(14).text(kopKiri3, centerLeft, doc.y + 2, { width: centerWidth, lineGap: 1.5 });
-      if (kopKiri4 && kopKiri4.trim()) {
-        doc.font('Times-Bold').fontSize(12).text(kopKiri4, centerLeft, doc.y + 1, { width: centerWidth, lineGap: 1.5 });
-      }
+      // Hitung perataan vertikal terpusat (items-center) terhadap logo seperti di PrintSPK.jsx
+      const textBlockHeight = (kopKiri4 && kopKiri4.trim()) ? 54 : 40;
+      const textStartY = headerTop + Math.max(0, (logoHeight - textBlockHeight) / 2); // ~39 pt
 
-      // Kolom Kanan: Alamat & Kontak Resmi (Rata Kanan, hanya menampilkan baris yang terisi di pengaturan SPK)
-      const rightLeft = 365;
+      doc.font('Times-Roman').fontSize(10.5).text(kopKiri1, centerLeft, textStartY, {
+        width: centerWidth,
+        characterSpacing: 0.4,
+        lineGap: 1.5
+      });
+      doc.text(kopKiri2, centerLeft, doc.y, {
+        width: centerWidth,
+        characterSpacing: 0.4,
+        lineGap: 1.5
+      });
+      // UNIVERSITAS HASANUDDIN: tracking-widest (characterSpacing: 1.2) sesuai PrintSPK.jsx
+      doc.font('Times-Bold').fontSize(13.5).text(kopKiri3, centerLeft, doc.y + 2, {
+        width: centerWidth,
+        characterSpacing: 1.2,
+        lineGap: 1.5
+      });
+      if (kopKiri4 && kopKiri4.trim()) {
+        doc.font('Times-Bold').fontSize(12).text(kopKiri4, centerLeft, doc.y + 1, {
+          width: centerWidth,
+          characterSpacing: 1.0,
+          lineGap: 1.5
+        });
+      }
+      const leftTextBottom = doc.y;
+
+      // Kolom Kanan: Alamat & Kontak Resmi (Rata Kanan, text-[10px] leading-tight mt-2 sesuai PrintSPK.jsx)
+      const rightLeft = 360;
       const rightWidth = rightMargin - rightLeft;
       doc.font('Times-Roman').fontSize(8);
 
@@ -191,16 +214,16 @@ const generateSamsatLetterPDF = async (data) => {
         kopSettings.KOP_KANAN_5 !== undefined ? kopSettings.KOP_KANAN_5 : 'Laman: www.unhas.ac.id'
       ].filter(line => line && line.trim() !== '');
 
-      let currentRightY = headerTop + 3;
+      let currentRightY = textStartY + 1;
       rightLines.forEach(line => {
-        doc.text(line, rightLeft, currentRightY, { width: rightWidth, align: 'right' });
-        currentRightY += 10;
+        doc.text(line, rightLeft, currentRightY, { width: rightWidth, align: 'right', lineGap: 1 });
+        currentRightY += 10.5;
       });
 
       // ─── JUDUL DOKUMEN & METADATA SURAT ───
-      // Mengikuti standar Dokumen SPK: tanpa garis hitam tebal, jarak nafas yang bersih
-      const headerBottom = Math.max(doc.y, headerTop + 68, currentRightY);
-      let yPos = headerBottom + 16;
+      // Mengikuti standar Dokumen SPK: tanpa garis hitam tebal, jarak nafas yang bersih (mb-6 ≈ 20pt)
+      const headerBottom = Math.max(headerTop + logoHeight, leftTextBottom, currentRightY);
+      let yPos = headerBottom + 18;
 
       doc.font('Times-Bold').fontSize(12).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
         align: 'center'
