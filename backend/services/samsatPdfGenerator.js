@@ -203,8 +203,7 @@ const generateSamsatLetterPDF = async (data) => {
       let yPos = headerBottom + 16;
 
       doc.font('Times-Bold').fontSize(12).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
-        align: 'center',
-        underline: true
+        align: 'center'
       });
 
       yPos += 15;
@@ -345,7 +344,7 @@ const generateSamsatLetterPDF = async (data) => {
       const pemberiNama = pemberiKuasa.nama || pemberiKuasa.nama_lengkap || '___________________';
       const pemberiNip = pemberiKuasa.nip || pemberiKuasa.nip_nik || '-';
 
-      doc.font('Times-Bold').fontSize(10).text(pemberiNama, rightColX, signBaseY, { width: signColWidth, align: 'left', underline: true });
+      doc.font('Times-Bold').fontSize(10).text(pemberiNama, rightColX, signBaseY, { width: signColWidth, align: 'left' });
       doc.font('Times-Roman').fontSize(9.5).text(`NIP ${pemberiNip}`, rightColX, signBaseY + 14, { width: signColWidth, align: 'left' });
 
       // Blok Tembusan: Ditempatkan di sisi kiri BAWAH tanda tangan (tidak sejajar dengan tanda tangan)
