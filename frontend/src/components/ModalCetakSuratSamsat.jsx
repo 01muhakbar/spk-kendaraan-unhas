@@ -189,14 +189,14 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-opacity">
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header Modal */}
-        <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-5 text-white flex justify-between items-center">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto transition-opacity">
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
+        {/* Header Modal - Fixed at top */}
+        <div className="bg-gradient-to-r from-blue-700 to-indigo-800 px-5 py-4 text-white flex justify-between items-center shrink-0 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <span className="text-2xl p-2 bg-white/10 rounded-lg">📄</span>
+            <span className="text-2xl p-1.5 bg-white/10 rounded-lg shrink-0">📄</span>
             <div>
-              <h3 className="text-lg font-bold leading-tight">Konfigurasi Surat Rekomendasi & Kuasa SAMSAT</h3>
+              <h3 className="text-base sm:text-lg font-bold leading-tight">Konfigurasi Surat Rekomendasi & Kuasa SAMSAT</h3>
               <p className="text-xs text-blue-100 mt-0.5">Penerbitan surat pengurusan STNK & Pajak resmi UNHAS</p>
             </div>
           </div>
@@ -210,179 +210,181 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleGeneratePdf} className="p-6 space-y-4">
-          {errorMsg && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg flex items-start gap-2">
-              <span className="font-bold text-red-600">⚠️</span>
-              <span>{errorMsg}</span>
-            </div>
-          )}
+        {/* Form Body - Scrollable content area */}
+        <form onSubmit={handleGeneratePdf} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg flex items-start gap-2">
+                <span className="font-bold text-red-600">⚠️</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-          {successMsg && (
-            <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-lg flex items-start gap-2">
-              <span className="font-bold text-green-600">✅</span>
-              <span>{successMsg}</span>
-            </div>
-          )}
+            {successMsg && (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-lg flex items-start gap-2">
+                <span className="font-bold text-green-600">✅</span>
+                <span>{successMsg}</span>
+              </div>
+            )}
 
-          {/* UX Guardrail Banner if STNK data is incomplete */}
-          {isStnkIncomplete && (
-            <div className="bg-amber-50 border border-amber-300 text-amber-800 text-xs p-3.5 rounded-lg flex items-start gap-2.5">
-              <span className="text-base text-amber-600">⚠️</span>
-              <div>
-                <p className="font-bold text-amber-900">Spesifikasi STNK Belum Lengkap!</p>
-                <p className="mt-0.5 text-amber-700 leading-relaxed">
-                  Kendaraan ini belum memiliki data lengkap untuk No. Rangka, No. Mesin, Warna, atau Isi Silinder. Sesuai standar persuratan SAMSAT, lengkapi data melalui tombol <strong>Edit Kendaraan</strong> terlebih dahulu.
-                </p>
+            {/* UX Guardrail Banner if STNK data is incomplete */}
+            {isStnkIncomplete && (
+              <div className="bg-amber-50 border border-amber-300 text-amber-800 text-xs p-3.5 rounded-lg flex items-start gap-2.5">
+                <span className="text-base text-amber-600">⚠️</span>
+                <div>
+                  <p className="font-bold text-amber-900">Spesifikasi STNK Belum Lengkap!</p>
+                  <p className="mt-0.5 text-amber-700 leading-relaxed">
+                    Kendaraan ini belum memiliki data lengkap untuk No. Rangka, No. Mesin, Warna, atau Isi Silinder. Sesuai standar persuratan SAMSAT, lengkapi data melalui tombol <strong>Edit Kendaraan</strong> terlebih dahulu.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Vehicle Info Badge */}
+            <div className="bg-blue-50/70 border border-blue-200/80 rounded-lg p-3.5">
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[11px] font-semibold tracking-wider text-blue-600 uppercase">Aset Kendaraan Terpilih</span>
+                  <h4 className="text-base font-bold text-gray-900 mt-0.5">{vehicle.nomor_polisi || '-'}</h4>
+                  <p className="text-xs text-gray-600 font-medium">
+                    {vehicle.merek_type || '-'} {vehicle.model ? `• ${vehicle.model}` : ''}
+                  </p>
+                </div>
+                <div className="text-right text-xs text-gray-500 shrink-0">
+                  <span className={`block font-mono px-2 py-0.5 rounded border text-xs ${
+                    vehicle.no_mesin ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
+                  }`}>
+                    {vehicle.no_mesin ? `Mesin: ${vehicle.no_mesin}` : 'Mesin: Kosong'}
+                  </span>
+                  <span className={`block font-mono px-2 py-0.5 rounded border text-xs mt-1 ${
+                    vehicle.no_rangka ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
+                  }`}>
+                    {vehicle.no_rangka ? `Rangka: ${vehicle.no_rangka}` : 'Rangka: Kosong'}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Vehicle Info Badge */}
-          <div className="bg-blue-50/70 border border-blue-200/80 rounded-lg p-3.5">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-[11px] font-semibold tracking-wider text-blue-600 uppercase">Aset Kendaraan Terpilih</span>
-                <h4 className="text-base font-bold text-gray-900 mt-0.5">{vehicle.nomor_polisi || '-'}</h4>
-                <p className="text-xs text-gray-600 font-medium">
-                  {vehicle.merek_type || '-'} {vehicle.model ? `• ${vehicle.model}` : ''}
-                </p>
-              </div>
-              <div className="text-right text-xs text-gray-500">
-                <span className={`block font-mono px-2 py-0.5 rounded border text-xs ${
-                  vehicle.no_mesin ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
-                }`}>
-                  {vehicle.no_mesin ? `Mesin: ${vehicle.no_mesin}` : 'Mesin: Kosong'}
-                </span>
-                <span className={`block font-mono px-2 py-0.5 rounded border text-xs mt-1 ${
-                  vehicle.no_rangka ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
-                }`}>
-                  {vehicle.no_rangka ? `Rangka: ${vehicle.no_rangka}` : 'Rangka: Kosong'}
-                </span>
-              </div>
+            {/* Input Nomor Surat */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+                Nomor Surat Keluar <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={nomorSurat}
+                onChange={(e) => setNomorSurat(e.target.value)}
+                placeholder="Contoh: 65969/UN4.1.6.1.3/PL.10.04/2026"
+                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Format registrasi surat resmi universitas (Subdirektorat Kerumahtanggaan dan Keprotokolan).
+              </p>
+            </div>
+
+            {/* Dropdown Perihal / Hal */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+                Perihal / Hal Surat <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={perihalSurat}
+                onChange={(e) => setPerihalSurat(e.target.value)}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white"
+              >
+                <option value="Pembayaran Pajak Tahunan">Pembayaran Pajak Tahunan</option>
+                <option value="Pergantian STNK dan Plat 5 Tahunan">Pergantian STNK dan Plat 5 Tahunan</option>
+                <option value="Pembayaran Pajak Tahunan dan Pergantian STNK">Pembayaran Pajak Tahunan dan Pergantian STNK</option>
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Tujuan pengurusan berkas legalitas dan administrasi di kantor SAMSAT.
+              </p>
+            </div>
+
+            {/* Dropdown Pemberi Kuasa (Penandatangan Surat) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+                Pemberi Kuasa (Kepala Subdirektorat) <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={pemberiKuasaId}
+                onChange={(e) => setPemberiKuasaId(e.target.value)}
+                required
+                disabled={loadingSignatories}
+                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
+              >
+                <option value="">-- Pilih Pejabat Pemberi Kuasa --</option>
+                {kasubditList.length > 0 && (
+                  <optgroup label="Kepala Subdirektorat (Direkomendasikan)">
+                    {kasubditList.map(s => (
+                      <option key={`pemberi-${s.id}`} value={s.id}>
+                        {s.nama_lengkap} — {s.jabatan} (NIP: {s.nip_nik || '-'})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {otherPemberiList.length > 0 && (
+                  <optgroup label="Pejabat / Pegawai Lainnya">
+                    {otherPemberiList.map(s => (
+                      <option key={`pemberi-other-${s.id}`} value={s.id}>
+                        {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Pejabat yang bertindak menandatangani Surat Rekomendasi dan Kuasa di sisi kanan bawah dokumen.
+              </p>
+            </div>
+
+            {/* Dropdown Penerima Kuasa (Staf Lapangan) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+                Penerima Kuasa (Staf Lapangan) <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={penerimaKuasaId}
+                onChange={(e) => setPenerimaKuasaId(e.target.value)}
+                required
+                disabled={loadingSignatories}
+                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
+              >
+                <option value="">-- Pilih Staf Lapangan Penerima Kuasa --</option>
+                {teknisiList.length > 0 && (
+                  <optgroup label="Staf Lapangan / Teknisi Operasional (Direkomendasikan)">
+                    {teknisiList.map(s => (
+                      <option key={`penerima-${s.id}`} value={s.id}>
+                        {s.nama_lengkap} — {s.jabatan} (NIP: {s.nip_nik || '-'})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {otherPenerimaList.length > 0 && (
+                  <optgroup label="Pegawai / Staf Lainnya">
+                    {otherPenerimaList.map(s => (
+                      <option key={`penerima-other-${s.id}`} value={s.id}>
+                        {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Staf yang diberi kuasa membawa fisik kendaraan dinas dan berkas untuk pengurusan di SAMSAT.
+              </p>
             </div>
           </div>
 
-          {/* Input Nomor Surat */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Nomor Surat Keluar <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={nomorSurat}
-              onChange={(e) => setNomorSurat(e.target.value)}
-              placeholder="Contoh: 65969/UN4.1.6.1.3/PL.10.04/2026"
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
-            />
-            <p className="text-[11px] text-gray-500 mt-1">
-              Format registrasi surat resmi universitas (Subdirektorat Kerumahtanggaan dan Keprotokolan).
-            </p>
-          </div>
-
-          {/* Dropdown Perihal / Hal */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Perihal / Hal Surat <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={perihalSurat}
-              onChange={(e) => setPerihalSurat(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white"
-            >
-              <option value="Pembayaran Pajak Tahunan">Pembayaran Pajak Tahunan</option>
-              <option value="Pergantian STNK dan Plat 5 Tahunan">Pergantian STNK dan Plat 5 Tahunan</option>
-              <option value="Pembayaran Pajak Tahunan dan Pergantian STNK">Pembayaran Pajak Tahunan dan Pergantian STNK</option>
-            </select>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Tujuan pengurusan berkas legalitas dan administrasi di kantor SAMSAT.
-            </p>
-          </div>
-
-          {/* Dropdown Pemberi Kuasa (Penandatangan Surat) */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Pemberi Kuasa (Kepala Subdirektorat) <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={pemberiKuasaId}
-              onChange={(e) => setPemberiKuasaId(e.target.value)}
-              required
-              disabled={loadingSignatories}
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
-            >
-              <option value="">-- Pilih Pejabat Pemberi Kuasa --</option>
-              {kasubditList.length > 0 && (
-                <optgroup label="Kepala Subdirektorat (Direkomendasikan)">
-                  {kasubditList.map(s => (
-                    <option key={`pemberi-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} (NIP: {s.nip_nik || '-'})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {otherPemberiList.length > 0 && (
-                <optgroup label="Pejabat / Pegawai Lainnya">
-                  {otherPemberiList.map(s => (
-                    <option key={`pemberi-other-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Pejabat yang bertindak menandatangani Surat Rekomendasi dan Kuasa di sisi kanan bawah dokumen.
-            </p>
-          </div>
-
-          {/* Dropdown Penerima Kuasa (Staf Lapangan) */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Penerima Kuasa (Staf Lapangan) <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={penerimaKuasaId}
-              onChange={(e) => setPenerimaKuasaId(e.target.value)}
-              required
-              disabled={loadingSignatories}
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
-            >
-              <option value="">-- Pilih Staf Lapangan Penerima Kuasa --</option>
-              {teknisiList.length > 0 && (
-                <optgroup label="Staf Lapangan / Teknisi Operasional (Direkomendasikan)">
-                  {teknisiList.map(s => (
-                    <option key={`penerima-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} (NIP: {s.nip_nik || '-'})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {otherPenerimaList.length > 0 && (
-                <optgroup label="Pegawai / Staf Lainnya">
-                  {otherPenerimaList.map(s => (
-                    <option key={`penerima-other-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Staf yang diberi kuasa membawa fisik kendaraan dinas dan berkas untuk pengurusan di SAMSAT.
-            </p>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+          {/* Footer Buttons - Always pinned and visible at bottom */}
+          <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-gray-50/95 backdrop-blur-xs border-t border-gray-200/80 flex items-center justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isGenerating}
-              className="px-4 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 text-gray-700 hover:bg-gray-200/70 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
             >
               Batal
             </button>
