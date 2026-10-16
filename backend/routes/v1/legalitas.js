@@ -205,9 +205,21 @@ router.post('/cetak-surat', async (req, res) => {
       alamat: 'Jl. P. Kemerdekaan Km. 10 Makassar'
     };
 
-    // Ambil Pengaturan Kop & Logo
+    // Ambil Pengaturan Kop & Logo identik dengan Pratinjau Dokumen SPK
+    const defaultKop = {
+      KOP_KIRI_1: 'KEMENTERIAN PENDIDIKAN TINGGI, SAINS,',
+      KOP_KIRI_2: 'DAN TEKNOLOGI',
+      KOP_KIRI_3: 'UNIVERSITAS HASANUDDIN',
+      KOP_KIRI_4: '',
+      KOP_KANAN_1: 'Jalan Perintis Kemerdekaan Km. 10',
+      KOP_KANAN_2: 'Tamalanrea, Makassar 90245',
+      KOP_KANAN_3: '',
+      KOP_KANAN_4: 'e-mail: office@unhas.ac.id',
+      KOP_KANAN_5: 'Laman: www.unhas.ac.id'
+    };
+
     const settings = await SystemSetting.findAll();
-    const kopSettings = {};
+    const kopSettings = { ...defaultKop };
     let logoUrl = null;
 
     settings.forEach(s => {
