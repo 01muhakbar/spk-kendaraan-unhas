@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Vehicle, RiwayatLegalitas } = require('../../models');
+const { Vehicle, RiwayatLegalitas, Signatory, SystemSetting } = require('../../models');
+const { generateSamsatLetterPDF } = require('../../services/samsatPdfGenerator');
 const sequelize = require('../../config/database');
 const moment = require('moment');
 
@@ -129,6 +130,65 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: "Riwayat pembayaran berhasil dihapus" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/v1/legalitas/cetak-surat - Generate Surat Rekomendasi & Kuasa SAMSAT PDF
+router.post('/cetak-surat', async (req, res) => {
+  try {
+    const { vehicleId, nomorSurat, pemberiKuasaId, penerimaKuasaId } = req.body;
+
+    if (!vehicleId || !pemberiKuasaId || !penerimaKuasaId) {
+      return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId, pemberiKuasaId, dan penerimaKuasaId wajib diisi." });
+    }
+
+    const vehicle = await Vehicle.findByPk(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({ error: "Data kendaraan tidak ditemukan." });
+    }
+
+    const pemberiKuasa = await Signatory.findByPk(pemberiKuasaId);
+    if (!pemberiKuasa) {
+      return res.status(404).json({ error: "Data pejabat pemberi kuasa tidak ditemukan." });
+    }
+
+    const penerimaKuasa = await Signatory.findByPk(penerimaKuasaId);
+    if (!penerimaKuasa) {
+      return res.status(404).json({ error: "Data penerima kuasa tidak ditemukan." });
+    }
+
+    // Ambil Pengaturan Kop & Logo
+    const settings = await SystemSetting.findAll();
+    const kopSettings = {};
+    let logoUrl = null;
+
+    settings.forEach(s => {
+      if (s.setting_key === 'LOGO_KOP_SURAT') {
+        logoUrl = s.setting_value;
+      } else {
+        kopSettings[s.setting_key] = s.setting_value;
+      }
+    });
+
+    const pdfBuffer = await generateSamsatLetterPDF({
+      vehicle,
+      pemberiKuasa,
+      penerimaKuasa,
+      nomorSurat: nomorSurat || '65969/UN4.1.6.1.3/PL.10.04/2026',
+      kopSettings,
+      logoUrl
+    });
+
+    const cleanPlat = (vehicle.nomor_polisi || 'KENDARAAN').replace(/\s+/g, '_');
+    const filename = `Surat_Kuasa_SAMSAT_${cleanPlat}_${new Date().getFullYear()}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    return res.status(200).send(pdfBuffer);
+  } catch (error) {
+    console.error("Gagal membuat PDF Surat SAMSAT:", error);
+    res.status(500).json({ error: "Gagal membuat PDF: " + error.message });
   }
 });
 

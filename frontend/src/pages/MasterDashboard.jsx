@@ -7,6 +7,7 @@ import { fetchLogo, fetchKop, resolveLogoUrl, MAX_LOGO_BYTES, LOGO_TYPES, fetchL
 import PrintSPK from './PrintSPK';
 import ModulLegalitas from './ModulLegalitas';
 import BudgetWidget from './BudgetWidget';
+import ModalCetakSuratSamsat from '../components/ModalCetakSuratSamsat';
 import JSZip from 'jszip';
 import html2pdf from 'html2pdf.js';
 
@@ -79,6 +80,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   // Side Drawer Detail Kendaraan & STNK
   const [selectedVehicleDetail, setSelectedVehicleDetail] = useState(null);
   const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  
+  // Cetak Surat Rekomendasi & Kuasa SAMSAT
+  const [showCetakSuratModal, setShowCetakSuratModal] = useState(false);
+  const [vehicleForCetakSurat, setVehicleForCetakSurat] = useState(null);
   
   // Edit & Error states
   const [editData, setEditData] = useState(null);
@@ -1203,7 +1208,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
             )}
             {/* TAB: LEGALITAS */}
             {activeTab === 'legalitas' && (
-              <ModulLegalitas vehicles={vehicles} setVehicles={setVehicles} />
+              <ModulLegalitas vehicles={vehicles} setVehicles={setVehicles} signatories={signatories} />
             )}
             {/* TAB: SETTINGS */}
             {activeTab === 'settings' && (
@@ -1765,24 +1770,36 @@ const MasterDashboard = ({ onSettingsSaved }) => {
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+            <div className="p-4 border-t border-gray-200 bg-gray-50 space-y-2.5">
               <button
                 type="button"
                 onClick={() => {
-                  setShowDetailDrawer(false);
-                  openModal('vehicle', selectedVehicleDetail);
+                  setVehicleForCetakSurat(selectedVehicleDetail);
+                  setShowCetakSuratModal(true);
                 }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-xs"
               >
-                <span>✏️</span> Edit Kendaraan
+                <span>📄</span> Cetak Surat SAMSAT
               </button>
-              <button
-                type="button"
-                onClick={() => setShowDetailDrawer(false)}
-                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
-              >
-                Tutup
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDetailDrawer(false);
+                    openModal('vehicle', selectedVehicleDetail);
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <span>✏️</span> Edit Kendaraan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDetailDrawer(false)}
+                  className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -1871,6 +1888,17 @@ const MasterDashboard = ({ onSettingsSaved }) => {
           </div>
         </div>
       )}
+
+      {/* Modal Cetak Surat Rekomendasi & Kuasa SAMSAT */}
+      <ModalCetakSuratSamsat
+        isOpen={showCetakSuratModal}
+        onClose={() => {
+          setShowCetakSuratModal(false);
+          setVehicleForCetakSurat(null);
+        }}
+        vehicle={vehicleForCetakSurat}
+        signatories={signatories}
+      />
 
     </div>
   );

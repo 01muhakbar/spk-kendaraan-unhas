@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
+import ModalCetakSuratSamsat from '../components/ModalCetakSuratSamsat';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-const ModulLegalitas = ({ vehicles, setVehicles }) => {
+const ModulLegalitas = ({ vehicles, setVehicles, signatories = [] }) => {
   const [activeTab, setActiveTab] = useState('jatuh-tempo');
   const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,10 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
+  
+  // State untuk Modal Cetak Surat SAMSAT
+  const [showCetakSuratModal, setShowCetakSuratModal] = useState(false);
+  const [vehicleToCetak, setVehicleToCetak] = useState(null);
   
   const initialForm = {
     vehicleId: '',
@@ -194,15 +199,30 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
                     </span>
                   </td>
                   <td className="p-3 text-center">
-                    <button 
-                      onClick={() => {
-                        openModal();
-                        setFormData(prev => ({ ...prev, vehicleId: v.id }));
-                      }}
-                      className="bg-green-100 text-green-700 px-3 py-1 rounded font-semibold text-xs hover:bg-green-200"
-                    >
-                      Bayar
-                    </button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setVehicleToCetak(v);
+                          setShowCetakSuratModal(true);
+                        }}
+                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded font-semibold text-xs flex items-center gap-1 transition-colors"
+                        title="Cetak Surat Rekomendasi & Kuasa SAMSAT"
+                      >
+                        <span>📄</span>
+                        <span>Cetak Surat SAMSAT</span>
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          openModal();
+                          setFormData(prev => ({ ...prev, vehicleId: v.id }));
+                        }}
+                        className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded font-semibold text-xs transition-colors"
+                      >
+                        Bayar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -356,6 +376,17 @@ const ModulLegalitas = ({ vehicles, setVehicles }) => {
           </div>
         </div>
       )}
+
+      {/* Modal Konfigurasi Cetak Surat SAMSAT */}
+      <ModalCetakSuratSamsat
+        isOpen={showCetakSuratModal}
+        onClose={() => {
+          setShowCetakSuratModal(false);
+          setVehicleToCetak(null);
+        }}
+        vehicle={vehicleToCetak}
+        signatories={signatories}
+      />
     </div>
   );
 };
