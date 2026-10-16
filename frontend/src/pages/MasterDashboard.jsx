@@ -1774,6 +1774,12 @@ const MasterDashboard = ({ onSettingsSaved }) => {
               <button
                 type="button"
                 onClick={() => {
+                  if (!selectedVehicleDetail.no_rangka || !selectedVehicleDetail.no_mesin || !selectedVehicleDetail.warna || !selectedVehicleDetail.isi_silinder) {
+                    setErrorMsg("Gagal mencetak! Lengkapi data spesifikasi STNK (No. Rangka, Mesin, Warna, cc) melalui tombol Edit terlebih dahulu.");
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
+                  setErrorMsg('');
                   setVehicleForCetakSurat(selectedVehicleDetail);
                   setShowCetakSuratModal(true);
                 }}

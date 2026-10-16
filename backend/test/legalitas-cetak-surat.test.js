@@ -42,6 +42,7 @@ test('POST /legalitas/cetak-surat returns 400 if required parameters are missing
 });
 
 test('POST /legalitas/cetak-surat returns 404 if vehicle is not found', async () => {
+  mock.method(Vehicle, 'findOne', async () => null);
   mock.method(Vehicle, 'findByPk', async () => null);
 
   const res = await fetch(`${base}/legalitas/cetak-surat`, {
@@ -86,6 +87,7 @@ test('POST /legalitas/cetak-surat successfully returns PDF binary with correct h
     jabatan: 'Staf Operasional Kendaraan Dinas'
   };
 
+  mock.method(Vehicle, 'findOne', async () => mockVehicle);
   mock.method(Vehicle, 'findByPk', async () => mockVehicle);
   mock.method(Signatory, 'findByPk', async (id) => {
     if (id === 'p-1') return mockPemberi;

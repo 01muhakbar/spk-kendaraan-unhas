@@ -17,6 +17,18 @@ const ModulLegalitas = ({ vehicles, setVehicles, signatories = [] }) => {
   // State untuk Modal Cetak Surat SAMSAT
   const [showCetakSuratModal, setShowCetakSuratModal] = useState(false);
   const [vehicleToCetak, setVehicleToCetak] = useState(null);
+
+  // UX Guardrail: Pengecekan kelengkapan spesifikasi STNK sebelum cetak
+  const handleCetakSurat = (kendaraan) => {
+    if (!kendaraan.no_rangka || !kendaraan.no_mesin || !kendaraan.warna || !kendaraan.isi_silinder) {
+      setErrorMsg("Gagal mencetak! Lengkapi data spesifikasi STNK (No. Rangka, Mesin, Warna, cc) melalui tombol Edit terlebih dahulu.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setErrorMsg('');
+    setVehicleToCetak(kendaraan);
+    setShowCetakSuratModal(true);
+  };
   
   const initialForm = {
     vehicleId: '',
@@ -202,10 +214,7 @@ const ModulLegalitas = ({ vehicles, setVehicles, signatories = [] }) => {
                     <div className="flex items-center justify-center gap-1.5">
                       <button 
                         type="button"
-                        onClick={() => {
-                          setVehicleToCetak(v);
-                          setShowCetakSuratModal(true);
-                        }}
+                        onClick={() => handleCetakSurat(v)}
                         className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded font-semibold text-xs flex items-center gap-1 transition-colors"
                         title="Cetak Surat Rekomendasi & Kuasa SAMSAT"
                       >

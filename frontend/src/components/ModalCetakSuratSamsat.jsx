@@ -17,6 +17,11 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Validasi kelengkapan spesifikasi STNK (UX Guardrail)
+  const isStnkIncomplete = Boolean(
+    vehicle && (!vehicle.no_rangka || !vehicle.no_mesin || !vehicle.warna || !vehicle.isi_silinder)
+  );
+
   // Fetch signatories if not provided or empty
   useEffect(() => {
     if (isOpen) {
@@ -48,7 +53,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
   const autoSelectSignatories = (list) => {
     if (!list || list.length === 0) return;
 
-    // Pemberi Kuasa: Prioritaskan KASUBDIT atau jabatan yang mengandung Kasubdit / Kepala
+    // Pemberi Kuasa: Prioritaskan KASUBDIT atau jabatan Kepala Subdirektorat
     const kasubdit = list.find(s => 
       s.kategori_peran === 'KASUBDIT' || 
       (s.jabatan && s.jabatan.toLowerCase().includes('kasubdit')) ||
@@ -60,7 +65,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setPemberiKuasaId(list[0].id);
     }
 
-    // Penerima Kuasa: Prioritaskan TEKNISI atau staf operasional
+    // Penerima Kuasa (Opsional): Prioritaskan TEKNISI atau staf operasional
     const teknisi = list.find(s => 
       s.kategori_peran === 'TEKNISI' || 
       (s.jabatan && s.jabatan.toLowerCase().includes('teknisi')) ||
@@ -70,8 +75,6 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setPenerimaKuasaId(teknisi.id);
     } else if (list.length > 1) {
       setPenerimaKuasaId(list[1].id);
-    } else {
-      setPenerimaKuasaId(list[0].id);
     }
   };
 
@@ -79,29 +82,26 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
 
   const kasubditList = signatoriesList.filter(s => 
     s.kategori_peran === 'KASUBDIT' || 
-    (s.jabatan && s.jabatan.toLowerCase().includes('kasubdit'))
+    (s.jabatan && s.jabatan.toLowerCase().includes('kasubdit')) ||
+    (s.jabatan && s.jabatan.toLowerCase().includes('kepala subdirektorat'))
   );
   const otherPemberiList = signatoriesList.filter(s => !kasubditList.includes(s));
 
-  const teknisiList = signatoriesList.filter(s => 
-    s.kategori_peran === 'TEKNISI' || 
-    (s.jabatan && s.jabatan.toLowerCase().includes('teknisi')) ||
-    (s.jabatan && s.jabatan.toLowerCase().includes('staf'))
-  );
-  const otherPenerimaList = signatoriesList.filter(s => !teknisiList.includes(s));
-
   const handleGeneratePdf = async (e) => {
     e.preventDefault();
+
+    // UX Guardrail Check
+    if (isStnkIncomplete) {
+      setErrorMsg('Gagal mencetak! Lengkapi data spesifikasi STNK (No. Rangka, Mesin, Warna, cc) melalui tombol Edit terlebih dahulu.');
+      return;
+    }
+
     if (!nomorSurat.trim()) {
-      setErrorMsg('Nomor surat wajib diisi.');
+      setErrorMsg('Nomor surat keluar wajib diisi.');
       return;
     }
     if (!pemberiKuasaId) {
-      setErrorMsg('Pemberi kuasa wajib dipilih.');
-      return;
-    }
-    if (!penerimaKuasaId) {
-      setErrorMsg('Penerima kuasa wajib dipilih.');
+      setErrorMsg('Pemberi kuasa (Kepala Subdirektorat) wajib dipilih.');
       return;
     }
 
@@ -114,7 +114,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
         vehicleId: vehicle.id,
         nomorSurat: nomorSurat.trim(),
         pemberiKuasaId,
-        penerimaKuasaId
+        ...(penerimaKuasaId ? { penerimaKuasaId } : {})
       };
 
       const response = await axios.post(`${API}/legalitas/cetak-surat`, payload, {
@@ -203,22 +203,39 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
             </div>
           )}
 
+          {/* UX Guardrail Banner if STNK data is incomplete */}
+          {isStnkIncomplete && (
+            <div className="bg-amber-50 border border-amber-300 text-amber-800 text-xs p-3.5 rounded-lg flex items-start gap-2.5">
+              <span className="text-base text-amber-600">⚠️</span>
+              <div>
+                <p className="font-bold text-amber-900">Spesifikasi STNK Belum Lengkap!</p>
+                <p className="mt-0.5 text-amber-700 leading-relaxed">
+                  Kendaraan ini belum memiliki data lengkap untuk No. Rangka, No. Mesin, Warna, atau Isi Silinder. Sesuai standar persuratan SAMSAT, lengkapi data melalui tombol <strong>Edit Kendaraan</strong> terlebih dahulu.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Vehicle Info Badge */}
           <div className="bg-blue-50/70 border border-blue-200/80 rounded-lg p-3.5">
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[11px] font-semibold tracking-wider text-blue-600 uppercase">Aset Kendaraan Terpilih</span>
-                <h4 className="text-base font-bold text-gray-900 mt-0.5">{vehicle.nomor_polisi}</h4>
+                <h4 className="text-base font-bold text-gray-900 mt-0.5">{vehicle.nomor_polisi || '-'}</h4>
                 <p className="text-xs text-gray-600 font-medium">
-                  {vehicle.merek_type} {vehicle.model ? `• ${vehicle.model}` : ''}
+                  {vehicle.merek_type || '-'} {vehicle.model ? `• ${vehicle.model}` : ''}
                 </p>
               </div>
               <div className="text-right text-xs text-gray-500">
-                <span className="block font-mono bg-white px-2 py-0.5 rounded border border-blue-200 text-gray-700">
-                  {vehicle.no_mesin ? `Mesin: ${vehicle.no_mesin}` : 'Mesin: -'}
+                <span className={`block font-mono px-2 py-0.5 rounded border text-xs ${
+                  vehicle.no_mesin ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
+                }`}>
+                  {vehicle.no_mesin ? `Mesin: ${vehicle.no_mesin}` : 'Mesin: Kosong'}
                 </span>
-                <span className="block font-mono bg-white px-2 py-0.5 rounded border border-blue-200 text-gray-700 mt-1">
-                  {vehicle.no_rangka ? `Rangka: ${vehicle.no_rangka}` : 'Rangka: -'}
+                <span className={`block font-mono px-2 py-0.5 rounded border text-xs mt-1 ${
+                  vehicle.no_rangka ? 'bg-white border-blue-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600 font-bold'
+                }`}>
+                  {vehicle.no_rangka ? `Rangka: ${vehicle.no_rangka}` : 'Rangka: Kosong'}
                 </span>
               </div>
             </div>
@@ -238,14 +255,14 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
               className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
             />
             <p className="text-[11px] text-gray-500 mt-1">
-              Format registrasi surat resmi universitas (Direktorat Logistik / Rumah Tangga).
+              Format registrasi surat resmi universitas (Subdirektorat Kerumahtanggaan dan Keprotokolan).
             </p>
           </div>
 
-          {/* Dropdown Pemberi Kuasa */}
+          {/* Dropdown Pemberi Kuasa (Penandatangan Surat) */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Pemberi Kuasa (Pejabat Berwenang) <span className="text-red-500">*</span>
+              Penandatangan Surat (Kepala Subdirektorat) <span className="text-red-500">*</span>
             </label>
             <select
               value={pemberiKuasaId}
@@ -254,7 +271,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
               disabled={loadingSignatories}
               className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
             >
-              <option value="">-- Pilih Pejabat Pemberi Kuasa --</option>
+              <option value="">-- Pilih Pejabat Penandatangan --</option>
               {kasubditList.length > 0 && (
                 <optgroup label="Kepala Subdirektorat (Direkomendasikan)">
                   {kasubditList.map(s => (
@@ -275,44 +292,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
               )}
             </select>
             <p className="text-[11px] text-gray-500 mt-1">
-              Pihak Pertama yang bertindak atas nama Universitas Hasanuddin.
-            </p>
-          </div>
-
-          {/* Dropdown Penerima Kuasa */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Penerima Kuasa (Staf Operasional / Teknisi) <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={penerimaKuasaId}
-              onChange={(e) => setPenerimaKuasaId(e.target.value)}
-              required
-              disabled={loadingSignatories}
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
-            >
-              <option value="">-- Pilih Penerima Kuasa --</option>
-              {teknisiList.length > 0 && (
-                <optgroup label="Staf Operasional / Teknisi (Direkomendasikan)">
-                  {teknisiList.map(s => (
-                    <option key={`penerima-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} (NIP/NIK: {s.nip_nik || '-'})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {otherPenerimaList.length > 0 && (
-                <optgroup label="Pegawai Lainnya">
-                  {otherPenerimaList.map(s => (
-                    <option key={`penerima-other-${s.id}`} value={s.id}>
-                      {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Pihak Kedua yang ditugaskan melakukan pengurusan dokumen langsung di SAMSAT.
+              Pejabat yang bertindak menandatangani Surat Rekomendasi dan Kuasa di sisi kanan bawah dokumen.
             </p>
           </div>
 
@@ -328,7 +308,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
             </button>
             <button
               type="submit"
-              disabled={isGenerating || loadingSignatories}
+              disabled={isGenerating || loadingSignatories || isStnkIncomplete}
               className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGenerating ? (

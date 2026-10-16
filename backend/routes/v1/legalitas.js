@@ -138,12 +138,27 @@ router.post('/cetak-surat', async (req, res) => {
   try {
     const { vehicleId, nomorSurat, pemberiKuasaId, penerimaKuasaId } = req.body;
 
-    if (!vehicleId || !pemberiKuasaId || !penerimaKuasaId) {
-      return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId, pemberiKuasaId, dan penerimaKuasaId wajib diisi." });
+    if (!vehicleId || !pemberiKuasaId) {
+      return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId dan pemberiKuasaId wajib diisi." });
     }
 
-    const vehicle = await Vehicle.findByPk(vehicleId);
-    if (!vehicle) {
+    // Pembaruan Kueri Sequelize dengan atribut eksplisit
+    const vehicleData = await Vehicle.findOne({
+      where: { id: vehicleId },
+      attributes: [
+        'id',
+        'nomor_polisi',
+        'merek_type',
+        'jenis_kendaraan',
+        'model',
+        'no_rangka',
+        'no_mesin',
+        'warna',
+        'isi_silinder'
+      ]
+    });
+
+    if (!vehicleData) {
       return res.status(404).json({ error: "Data kendaraan tidak ditemukan." });
     }
 
@@ -152,10 +167,41 @@ router.post('/cetak-surat', async (req, res) => {
       return res.status(404).json({ error: "Data pejabat pemberi kuasa tidak ditemukan." });
     }
 
-    const penerimaKuasa = await Signatory.findByPk(penerimaKuasaId);
-    if (!penerimaKuasa) {
-      return res.status(404).json({ error: "Data penerima kuasa tidak ditemukan." });
+    let penerimaKuasa = null;
+    if (penerimaKuasaId) {
+      penerimaKuasa = await Signatory.findByPk(penerimaKuasaId);
     }
+
+    // Penanganan Nilai Null (Fallback Data)
+    const sanitizedVehicle = {
+      id: vehicleData.id,
+      nomor_polisi: vehicleData.nomor_polisi ? vehicleData.nomor_polisi.trim() : '-',
+      merek_type: vehicleData.merek_type ? vehicleData.merek_type.trim() : '-',
+      merek: vehicleData.merek_type ? vehicleData.merek_type.trim() : '-',
+      jenis_kendaraan: vehicleData.jenis_kendaraan ? vehicleData.jenis_kendaraan.trim() : '-',
+      jenis: vehicleData.jenis_kendaraan ? vehicleData.jenis_kendaraan.trim() : '-',
+      model: vehicleData.model && vehicleData.model.trim() ? vehicleData.model.trim() : '-',
+      no_rangka: vehicleData.no_rangka && vehicleData.no_rangka.trim() ? vehicleData.no_rangka.trim() : '-',
+      no_mesin: vehicleData.no_mesin && vehicleData.no_mesin.trim() ? vehicleData.no_mesin.trim() : '-',
+      warna: vehicleData.warna && vehicleData.warna.trim() ? vehicleData.warna.trim() : '-',
+      isi_silinder: vehicleData.isi_silinder != null ? `${vehicleData.isi_silinder} cc` : '-'
+    };
+
+    const sanitizedPemberi = {
+      nama: pemberiKuasa.nama_lengkap || '-',
+      nama_lengkap: pemberiKuasa.nama_lengkap || '-',
+      nip: pemberiKuasa.nip_nik || '-',
+      nip_nik: pemberiKuasa.nip_nik || '-',
+      jabatan: pemberiKuasa.jabatan || 'Kepala Subdirektorat Kerumahtanggaan dan Keprotokolan'
+    };
+
+    const sanitizedPenerima = penerimaKuasa ? {
+      nama: penerimaKuasa.nama_lengkap || '-',
+      nama_lengkap: penerimaKuasa.nama_lengkap || '-',
+      nip: penerimaKuasa.nip_nik || '-',
+      nip_nik: penerimaKuasa.nip_nik || '-',
+      jabatan: penerimaKuasa.jabatan || 'Staf Operasional'
+    } : null;
 
     // Ambil Pengaturan Kop & Logo
     const settings = await SystemSetting.findAll();
@@ -171,15 +217,15 @@ router.post('/cetak-surat', async (req, res) => {
     });
 
     const pdfBuffer = await generateSamsatLetterPDF({
-      vehicle,
-      pemberiKuasa,
-      penerimaKuasa,
+      vehicle: sanitizedVehicle,
+      pemberiKuasa: sanitizedPemberi,
+      penerimaKuasa: sanitizedPenerima,
       nomorSurat: nomorSurat || '65969/UN4.1.6.1.3/PL.10.04/2026',
       kopSettings,
       logoUrl
     });
 
-    const cleanPlat = (vehicle.nomor_polisi || 'KENDARAAN').replace(/\s+/g, '_');
+    const cleanPlat = (sanitizedVehicle.nomor_polisi || 'KENDARAAN').replace(/\s+/g, '_');
     const filename = `Surat_Kuasa_SAMSAT_${cleanPlat}_${new Date().getFullYear()}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
