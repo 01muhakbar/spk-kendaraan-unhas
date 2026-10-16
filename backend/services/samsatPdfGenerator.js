@@ -200,53 +200,54 @@ const generateSamsatLetterPDF = async (data) => {
       // ─── JUDUL DOKUMEN & METADATA SURAT ───
       // Mengikuti standar Dokumen SPK: tanpa garis hitam tebal, jarak nafas yang bersih
       const headerBottom = Math.max(doc.y, headerTop + 68, currentRightY);
-      let yPos = headerBottom + 18;
+      let yPos = headerBottom + 16;
 
-      doc.font('Times-Bold').fontSize(11).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
+      doc.font('Times-Bold').fontSize(12).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
         align: 'center',
         underline: true
       });
 
-      yPos += 14;
-      doc.font('Times-Roman').fontSize(9.5).text(`Nomor : ${nomorSurat}`, leftMargin, yPos, {
+      yPos += 15;
+      doc.font('Times-Roman').fontSize(10).text(`Nomor : ${nomorSurat}`, leftMargin, yPos, {
         align: 'center'
       });
 
-      yPos += 15;
+      yPos += 16;
       // Injeksi Perihal / Hal Dinamis
-      doc.font('Times-Roman').fontSize(9.5).text('Hal :', leftMargin, yPos);
-      doc.font('Times-Bold').fontSize(9.5).text(perihalSurat, leftMargin + 30, yPos);
+      doc.font('Times-Roman').fontSize(10).text('Hal', leftMargin, yPos);
+      doc.text(':', leftMargin + 24, yPos);
+      doc.font('Times-Bold').fontSize(10).text(perihalSurat, leftMargin + 32, yPos);
 
       yPos += 15;
-      // Tujuan Surat
-      doc.font('Times-Roman').fontSize(9.5);
+      // Tujuan Surat (Format Baku Naskah Dinas: Rapi, tanpa 'di -' atau spasi canggung)
+      doc.font('Times-Roman').fontSize(10);
       doc.text('Kepada Yth.', leftMargin, yPos);
-      yPos += 11;
+      yPos += 13;
       doc.font('Times-Bold').text('Direktur Lalu Lintas Polda Sulsel', leftMargin, yPos);
-      yPos += 11;
-      doc.font('Times-Roman').text('cq. Kasi. BPKB / Kasi. STNK', leftMargin, yPos);
-      yPos += 11;
-      doc.text('di -', leftMargin, yPos);
-      yPos += 11;
-      doc.text('     Makassar', leftMargin, yPos);
+      yPos += 13;
+      doc.font('Times-Roman').text('cq. Kasi BPKB / Kasi STNK', leftMargin, yPos);
+      yPos += 13;
+      doc.text('di', leftMargin, yPos);
+      yPos += 13;
+      doc.text('Makassar', leftMargin, yPos);
 
       // ─── STANDARISASI ALIGNMENT TITIK DUA TERPADU (UNTUK SEMUA TABEL) ───
       // Menggunakan lebar kolom terpadu agar titik dua (:) sejajar tegak lurus sempurna
-      const tableIndent = leftMargin + 20; // 60 pt
-      const tableWidth = pageWidth - 20; // 495 pt
-      const colLabelWidth = 92; // 92 pt: Cukup luas untuk "Nomor Polisi" & "Nomor Rangka"
-      const colColonWidth = 15; // 15 pt: Pemisah titik dua
+      const tableIndent = leftMargin + 18; // 58 pt
+      const tableWidth = pageWidth - 18; // 497 pt
+      const colLabelWidth = 95; // 95 pt: Cukup luas untuk "Nomor Polisi" & "Nomor Rangka"
+      const colColonWidth = 14; // 14 pt: Pemisah titik dua
       const colValueWidth = tableWidth - colLabelWidth - colColonWidth; // 388 pt: Nilai data
 
-      const colLabelX = tableIndent; // 60 pt
-      const colColonX = colLabelX + colLabelWidth; // 152 pt
+      const colLabelX = tableIndent; // 58 pt
+      const colColonX = colLabelX + colLabelWidth; // 153 pt
       const colValueX = colColonX + colColonWidth; // 167 pt
 
       // ─── TABEL 1: IDENTITAS LEGAL PEMBERI KUASA ───
-      yPos += 14;
-      doc.font('Times-Roman').fontSize(9.5).text('Yang bertanda tangan dibawah ini:', leftMargin, yPos);
+      yPos += 16;
+      doc.font('Times-Roman').fontSize(10).text('Yang bertanda tangan di bawah ini:', leftMargin, yPos);
 
-      yPos += 12;
+      yPos += 13.5;
       const pemberiRows = [
         { label: 'Nama', value: pemberiKuasa.nama || pemberiKuasa.nama_lengkap || '-', bold: true },
         { label: 'NIP', value: pemberiKuasa.nip || pemberiKuasa.nip_nik || '-', bold: false },
@@ -255,103 +256,103 @@ const generateSamsatLetterPDF = async (data) => {
       ];
 
       pemberiRows.forEach(row => {
-        doc.font('Times-Roman').fontSize(9.5).text(row.label, colLabelX, yPos, { width: colLabelWidth });
+        doc.font('Times-Roman').fontSize(10).text(row.label, colLabelX, yPos, { width: colLabelWidth });
         doc.text(':', colColonX, yPos, { width: colColonWidth, align: 'center' });
-        doc.font(row.bold ? 'Times-Bold' : 'Times-Roman').text(row.value, colValueX, yPos, { width: colValueWidth });
-        yPos += 12.5;
+        doc.font(row.bold ? 'Times-Bold' : 'Times-Roman').fontSize(10).text(row.value, colValueX, yPos, { width: colValueWidth });
+        yPos += 13.5;
       });
 
       // ─── TABEL 2: IDENTITAS LEGAL PENERIMA KUASA ───
-      yPos += 4;
-      doc.font('Times-Roman').fontSize(9.5).text('Dengan ini memberi kuasa kepada:', leftMargin, yPos);
+      yPos += 6;
+      doc.font('Times-Roman').fontSize(10).text('Dengan ini memberi kuasa kepada:', leftMargin, yPos);
 
-      yPos += 12;
+      yPos += 13.5;
       const penerimaRows = [
         { label: 'Nama', value: penerimaKuasa.nama || penerimaKuasa.nama_lengkap || '-', bold: true },
         { label: 'NIP', value: penerimaKuasa.nip || penerimaKuasa.nip_nik || '-', bold: false },
-        { label: 'Jabatan', value: penerimaKuasa.jabatan || 'Staf Operasional', bold: false },
+        { label: 'Jabatan', value: penerimaKuasa.jabatan || 'Tim Teknisi Otomotif', bold: false },
         { label: 'Alamat', value: penerimaKuasa.alamat || 'Jl. P. Kemerdekaan Km. 10 Makassar', bold: false }
       ];
 
       penerimaRows.forEach(row => {
-        doc.font('Times-Roman').fontSize(9.5).text(row.label, colLabelX, yPos, { width: colLabelWidth });
+        doc.font('Times-Roman').fontSize(10).text(row.label, colLabelX, yPos, { width: colLabelWidth });
         doc.text(':', colColonX, yPos, { width: colColonWidth, align: 'center' });
-        doc.font(row.bold ? 'Times-Bold' : 'Times-Roman').text(row.value, colValueX, yPos, { width: colValueWidth });
-        yPos += 12.5;
+        doc.font(row.bold ? 'Times-Bold' : 'Times-Roman').fontSize(10).text(row.value, colValueX, yPos, { width: colValueWidth });
+        yPos += 13.5;
       });
 
       // ─── TABEL 3: SPESIFIKASI KENDARAAN (TITIK DUA SEJAJAR PERSIS DENGAN TABEL DI ATASNYA) ───
-      yPos += 4;
+      yPos += 6;
       const wheelDesc = formatWheelDescription(
         vehicle.jumlah_roda,
         vehicle.jenis_kendaraan || vehicle.jenis,
         vehicle.model
       );
 
-      doc.font('Times-Roman').fontSize(9.5).text(
+      doc.font('Times-Roman').fontSize(10).text(
         `Menerangkan bahwa kendaraan ${wheelDesc} dengan spesifikasi sebagai berikut:`,
         leftMargin, yPos, { width: pageWidth }
       );
 
-      yPos += 12;
+      yPos += 13.5;
       const specRows = [
-        { label: 'Merk', value: vehicle.merek || vehicle.merek_type || '-' },
-        { label: 'Type', value: vehicle.jenis || vehicle.jenis_kendaraan || '-' },
-        { label: 'Model', value: vehicle.model || '-' },
-        { label: 'Nomor Polisi', value: vehicle.nomor_polisi || '-' },
-        { label: 'Nomor Rangka', value: vehicle.no_rangka || '-' },
-        { label: 'Nomor Mesin', value: vehicle.no_mesin || '-' },
-        { label: 'Warna', value: vehicle.warna || '-' },
-        { label: 'Isi Silinder', value: vehicle.isi_silinder ? (vehicle.isi_silinder.toString().includes('cc') ? vehicle.isi_silinder : `${vehicle.isi_silinder} cc`) : '-' }
+        { label: 'Merk', value: vehicle.merek || vehicle.merek_type || '-', bold: false },
+        { label: 'Type', value: vehicle.jenis || vehicle.jenis_kendaraan || '-', bold: false },
+        { label: 'Model', value: vehicle.model || '-', bold: false },
+        { label: 'Nomor Polisi', value: vehicle.nomor_polisi || '-', bold: true },
+        { label: 'Nomor Rangka', value: vehicle.no_rangka || '-', bold: true },
+        { label: 'Nomor Mesin', value: vehicle.no_mesin || '-', bold: true },
+        { label: 'Warna', value: vehicle.warna || '-', bold: false },
+        { label: 'Isi Silinder', value: vehicle.isi_silinder ? (vehicle.isi_silinder.toString().includes('cc') ? vehicle.isi_silinder : `${vehicle.isi_silinder} cc`) : '-', bold: false }
       ];
 
       specRows.forEach(row => {
-        doc.font('Times-Roman').fontSize(9.5).text(row.label, colLabelX, yPos, { width: colLabelWidth });
+        doc.font('Times-Roman').fontSize(10).text(row.label, colLabelX, yPos, { width: colLabelWidth });
         doc.text(':', colColonX, yPos, { width: colColonWidth, align: 'center' });
-        doc.font('Times-Bold').text(row.value, colValueX, yPos, { width: colValueWidth });
-        yPos += 12;
+        doc.font(row.bold ? 'Times-Bold' : 'Times-Roman').fontSize(10).text(row.value, colValueX, yPos, { width: colValueWidth });
+        yPos += 13;
       });
 
       // ─── PARAGRAF PENUTUP ───
-      yPos += 5;
-      doc.font('Times-Roman').fontSize(9.5).text(
+      yPos += 7;
+      doc.font('Times-Roman').fontSize(10).text(
         'Adalah benar-benar milik Universitas Hasanuddin untuk diproses Surat Tanda Nomor Kendaraan (STNK) dan Buku Pemilikan Kendaraan Bermotor (BPKB).',
-        leftMargin, yPos, { width: pageWidth, lineGap: 1.5 }
+        leftMargin, yPos, { width: pageWidth, align: 'justify', lineGap: 2 }
       );
 
-      yPos = doc.y + 5;
+      yPos = doc.y + 6;
       doc.text(
         'Demikian Surat Rekomendasi dan Kuasa ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.',
-        leftMargin, yPos, { width: pageWidth, lineGap: 1.5 }
+        leftMargin, yPos, { width: pageWidth, align: 'justify', lineGap: 2 }
       );
 
       // ─── BLOK TANDA TANGAN PEJABAT (SISI KANAN) & TEMBUSAN (DI BAWAH TANDA TANGAN) ───
-      const signTableTop = doc.y + 18;
-      const col50Width = pageWidth * 0.50; // 50% (~257.5 pt)
+      const signTableTop = doc.y + 16;
+      const signColWidth = pageWidth * 0.46; // ~237 pt
       const leftColX = leftMargin; // Kolom Kiri
-      const rightColX = leftMargin + col50Width; // Kolom Kanan
+      const rightColX = leftMargin + pageWidth * 0.54; // Kolom Kanan (~318 pt)
 
       // Blok Kanan: Tanda Tangan Pejabat (Pemberi Kuasa)
       const dateText = `Makassar, ${formatTanggalIndo()}`;
-      doc.font('Times-Roman').fontSize(9.5).text(dateText, rightColX, signTableTop, { width: col50Width, align: 'left' });
+      doc.font('Times-Roman').fontSize(10).text(dateText, rightColX, signTableTop, { width: signColWidth, align: 'left' });
 
-      doc.text('Kepala Subdirektorat Kerumahtanggaan', rightColX, signTableTop + 12, { width: col50Width, align: 'left' });
-      doc.text('dan Keprotokolan', rightColX, signTableTop + 23, { width: col50Width, align: 'left' });
+      doc.text('Kepala Subdirektorat Kerumahtanggaan', rightColX, signTableTop + 14, { width: signColWidth, align: 'left' });
+      doc.text('dan Keprotokolan', rightColX, signTableTop + 27, { width: signColWidth, align: 'left' });
 
       // Ruang stempel basah instansi & tanda tangan fisik (~50 pt)
       const stampVerticalWhitespace = 50;
-      const signBaseY = signTableTop + 35 + stampVerticalWhitespace;
+      const signBaseY = signTableTop + 40 + stampVerticalWhitespace;
       const pemberiNama = pemberiKuasa.nama || pemberiKuasa.nama_lengkap || '___________________';
       const pemberiNip = pemberiKuasa.nip || pemberiKuasa.nip_nik || '-';
 
-      doc.font('Times-Bold').fontSize(9.5).text(pemberiNama, rightColX, signBaseY, { width: col50Width, align: 'left', underline: true });
-      doc.font('Times-Roman').fontSize(9).text(`NIP. ${pemberiNip}`, rightColX, signBaseY + 12, { width: col50Width, align: 'left' });
+      doc.font('Times-Bold').fontSize(10).text(pemberiNama, rightColX, signBaseY, { width: signColWidth, align: 'left', underline: true });
+      doc.font('Times-Roman').fontSize(9.5).text(`NIP ${pemberiNip}`, rightColX, signBaseY + 14, { width: signColWidth, align: 'left' });
 
       // Blok Tembusan: Ditempatkan di sisi kiri BAWAH tanda tangan (tidak sejajar dengan tanda tangan)
       const tembusanY = signBaseY + 24;
-      doc.font('Times-Roman').fontSize(8.5).text('Tembusan:', leftColX, tembusanY);
-      doc.text('1. Wakil Rektor Bidang Perencanaan, Keuangan, dan Prasarana.', leftColX, tembusanY + 11);
-      doc.text('2. Direktur Komunikasi dan Kantor Sekretariat Rektor.', leftColX, tembusanY + 22);
+      doc.font('Times-Bold').fontSize(9).text('Tembusan:', leftColX, tembusanY);
+      doc.font('Times-Roman').fontSize(9).text('1. Wakil Rektor Bidang Perencanaan, Keuangan, dan Prasarana.', leftColX, tembusanY + 12);
+      doc.text('2. Direktur Komunikasi dan Kantor Sekretariat Rektor.', leftColX, tembusanY + 24);
 
       doc.end();
     } catch (err) {
