@@ -35,6 +35,11 @@ const Vehicle = sequelize.define('Vehicle', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  jumlah_roda: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 4
+  },
   no_rangka: {
     type: DataTypes.STRING,
     allowNull: true,

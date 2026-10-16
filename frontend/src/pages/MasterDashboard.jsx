@@ -99,6 +99,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
     model: '',
     warna: '',
     isi_silinder: '',
+    jumlah_roda: 4,
     no_rangka: '',
     no_mesin: ''
   };
@@ -204,6 +205,10 @@ const MasterDashboard = ({ onSettingsSaved }) => {
           model: data.model || '',
           warna: data.warna || '',
           isi_silinder: data.isi_silinder !== undefined && data.isi_silinder !== null ? data.isi_silinder : '',
+          jumlah_roda: data.jumlah_roda !== undefined && data.jumlah_roda !== null
+            ? data.jumlah_roda
+            : (data.jenis_kendaraan && data.jenis_kendaraan.toLowerCase().includes('motor') ? 2 :
+               (data.jenis_kendaraan && (data.jenis_kendaraan.toLowerCase().includes('bus') || data.jenis_kendaraan.toLowerCase().includes('truk'))) ? 6 : 4),
           no_rangka: data.no_rangka || '',
           no_mesin: data.no_mesin || ''
         });
@@ -282,6 +287,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         model: vehicleForm.model?.trim() || null,
         warna: vehicleForm.warna?.trim() || null,
         isi_silinder: vehicleForm.isi_silinder !== '' && vehicleForm.isi_silinder !== null ? parseInt(vehicleForm.isi_silinder, 10) : null,
+        jumlah_roda: vehicleForm.jumlah_roda ? parseInt(vehicleForm.jumlah_roda, 10) : 4,
         no_rangka: vehicleForm.no_rangka?.trim() ? vehicleForm.no_rangka.trim().toUpperCase() : null,
         no_mesin: vehicleForm.no_mesin?.trim() ? vehicleForm.no_mesin.trim().toUpperCase() : null
       };
@@ -630,6 +636,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
       Model: v.model || '',
       Warna: v.warna || '',
       Isi_Silinder: v.isi_silinder != null ? `${v.isi_silinder} cc` : '',
+      Jumlah_Roda: v.jumlah_roda || 4,
       No_Rangka: v.no_rangka || '',
       No_Mesin: v.no_mesin || '',
       Status_Legalitas: v.status_legalitas || 'AKTIF',
@@ -687,6 +694,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
       Model: "Minibus",
       Warna: "Hitam Metalik",
       Isi_Silinder: 1998,
+      Jumlah_Roda: 4,
       No_Rangka: "MHKW123456789",
       No_Mesin: "1TR1234567"
     }];
@@ -1599,6 +1607,24 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1 text-gray-600">
+                    Jumlah Roda (SAMSAT)
+                  </label>
+                  <select
+                    className={`${inputClass} mb-0`}
+                    value={vehicleForm.jumlah_roda !== undefined && vehicleForm.jumlah_roda !== null ? vehicleForm.jumlah_roda : 4}
+                    onChange={e => setVehicleForm({...vehicleForm, jumlah_roda: parseInt(e.target.value, 10)})}
+                  >
+                    <option value={4}>Roda 4 (Mobil Penumpang / Minibus / Sedan / Pick Up)</option>
+                    <option value={2}>Roda 2 (Sepeda Motor)</option>
+                    <option value={6}>Roda 6 (Bus Kampus / Truk Operasional)</option>
+                    <option value={3}>Roda 3 (Motor Roda Tiga / Viar)</option>
+                    <option value={10}>Roda 10 (Truk Tronton / Alat Berat)</option>
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-1">Konfigurasi roda untuk dokumen resmi SAMSAT</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-600">
                     Nomor Rangka
                   </label>
                   <input
@@ -1751,6 +1777,19 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                     <span className="text-gray-500 text-xs">Isi Silinder:</span>
                     <span className="font-medium text-gray-800">
                       {selectedVehicleDetail.isi_silinder != null ? `${selectedVehicleDetail.isi_silinder} cc` : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-xs">Jumlah Roda:</span>
+                    <span className="font-medium text-gray-800">
+                      {selectedVehicleDetail.jumlah_roda === 2 ? 'Roda 2 (dua)' :
+                       selectedVehicleDetail.jumlah_roda === 6 ? 'Roda 6 (enam)' :
+                       selectedVehicleDetail.jumlah_roda === 3 ? 'Roda 3 (tiga)' :
+                       selectedVehicleDetail.jumlah_roda === 10 ? 'Roda 10 (sepuluh)' :
+                       selectedVehicleDetail.jumlah_roda ? `Roda ${selectedVehicleDetail.jumlah_roda} (${selectedVehicleDetail.jumlah_roda === 4 ? 'empat' : selectedVehicleDetail.jumlah_roda})` :
+                       ((selectedVehicleDetail.jenis_kendaraan && selectedVehicleDetail.jenis_kendaraan.toLowerCase().includes('motor')) ? 'Roda 2 (dua)' :
+                        (selectedVehicleDetail.jenis_kendaraan && (selectedVehicleDetail.jenis_kendaraan.toLowerCase().includes('bus') || selectedVehicleDetail.jenis_kendaraan.toLowerCase().includes('truk'))) ? 'Roda 6 (enam)' :
+                        'Roda 4 (empat)')}
                     </span>
                   </div>
                   <div className="pt-2 border-t">

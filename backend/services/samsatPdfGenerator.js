@@ -15,6 +15,48 @@ const formatTanggalIndo = (date = new Date()) => {
   return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
 };
 
+// Konversi jumlah roda kendaraan ke format administrasi baku (contoh: "roda 4 (empat)", "roda 2 (dua)", "roda 6 (enam)")
+const formatWheelDescription = (jumlahRoda, jenisKendaraan = '', model = '') => {
+  let count = (jumlahRoda !== undefined && jumlahRoda !== null && String(jumlahRoda).trim() !== '')
+    ? parseInt(jumlahRoda, 10)
+    : null;
+
+  // Jika jumlah roda belum diatur, lakukan inferensi cerdas dari Jenis Kendaraan & Model
+  if (!count || isNaN(count)) {
+    const combined = `${jenisKendaraan || ''} ${model || ''}`.toLowerCase();
+    if (combined.includes('motor') || combined.includes('matic') || combined.includes('scooter') || combined.includes('spm')) {
+      count = (combined.includes('tiga') || combined.includes('viar') || combined.includes('kaisar')) ? 3 : 2;
+    } else if (combined.includes('minibus') || combined.includes('microbus')) {
+      count = 4;
+    } else if (
+      /\bbus\b/.test(combined) ||
+      combined.includes('big bus') ||
+      combined.includes('bus besar') ||
+      combined.includes('truk') ||
+      combined.includes('truck') ||
+      combined.includes('dump') ||
+      combined.includes('tangki') ||
+      combined.includes('fuso')
+    ) {
+      count = 6;
+    } else {
+      count = 4;
+    }
+  }
+
+  const terbilangMap = {
+    2: 'dua',
+    3: 'tiga',
+    4: 'empat',
+    6: 'enam',
+    8: 'delapan',
+    10: 'sepuluh'
+  };
+
+  const terbilang = terbilangMap[count] || `${count}`;
+  return `roda ${count} (${terbilang})`;
+};
+
 // Ambil logo sebagai Buffer (Uploads Relatif / Base64 / File Lokal / Fallback Base64 Resmi)
 const getLogoBuffer = async (logoUrl) => {
   if (logoUrl && typeof logoUrl === 'string') {
@@ -240,9 +282,11 @@ const generateSamsatLetterPDF = async (data) => {
 
       // ─── TABEL 3: SPESIFIKASI KENDARAAN (TITIK DUA SEJAJAR PERSIS DENGAN TABEL DI ATASNYA) ───
       yPos += 4;
-      const wheelDesc = (vehicle.jenis_kendaraan && vehicle.jenis_kendaraan.toLowerCase().includes('motor'))
-        ? 'roda 2 (dua)'
-        : 'roda 4 (empat)';
+      const wheelDesc = formatWheelDescription(
+        vehicle.jumlah_roda,
+        vehicle.jenis_kendaraan || vehicle.jenis,
+        vehicle.model
+      );
 
       doc.font('Times-Roman').fontSize(9.5).text(
         `Menerangkan bahwa kendaraan ${wheelDesc} dengan spesifikasi sebagai berikut:`,
@@ -318,5 +362,6 @@ const generateSamsatLetterPDF = async (data) => {
 
 module.exports = {
   generateSamsatLetterPDF,
-  formatTanggalIndo
+  formatTanggalIndo,
+  formatWheelDescription
 };

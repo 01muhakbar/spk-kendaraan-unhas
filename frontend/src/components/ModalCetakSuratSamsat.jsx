@@ -12,6 +12,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
   const [perihalSurat, setPerihalSurat] = useState('Pembayaran Pajak Tahunan dan Pergantian STNK');
   const [pemberiKuasaId, setPemberiKuasaId] = useState('');
   const [penerimaKuasaId, setPenerimaKuasaId] = useState('');
+  const [jumlahRoda, setJumlahRoda] = useState(4);
   const [signatoriesList, setSignatoriesList] = useState(initialSignatories);
   const [loadingSignatories, setLoadingSignatories] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -30,6 +31,12 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setSuccessMsg('');
       setNomorSurat(defaultNomorSurat);
       setPerihalSurat('Pembayaran Pajak Tahunan dan Pergantian STNK');
+
+      const detectedRoda = vehicle?.jumlah_roda !== undefined && vehicle?.jumlah_roda !== null
+        ? vehicle.jumlah_roda
+        : ((vehicle?.jenis_kendaraan && vehicle.jenis_kendaraan.toLowerCase().includes('motor')) ? 2 :
+           (vehicle?.jenis_kendaraan && (vehicle.jenis_kendaraan.toLowerCase().includes('bus') || vehicle.jenis_kendaraan.toLowerCase().includes('truk'))) ? 6 : 4);
+      setJumlahRoda(detectedRoda);
 
       if (initialSignatories && initialSignatories.length > 0) {
         setSignatoriesList(initialSignatories);
@@ -137,7 +144,8 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
         nomorSurat: nomorSurat.trim(),
         perihalSurat: perihalSurat.trim(),
         pemberiKuasaId,
-        penerimaKuasaId
+        penerimaKuasaId,
+        jumlahRoda: parseInt(jumlahRoda, 10)
       };
 
       const response = await axios.post(`${API}/legalitas/cetak-surat`, payload, {
@@ -300,6 +308,29 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
               </select>
               <p className="text-[11px] text-gray-500 mt-1">
                 Tujuan pengurusan berkas legalitas dan administrasi di kantor SAMSAT.
+              </p>
+            </div>
+
+            {/* Dropdown Kategori / Jumlah Roda */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+                Kategori Roda Kendaraan (SAMSAT) <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={jumlahRoda}
+                onChange={(e) => setJumlahRoda(parseInt(e.target.value, 10))}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white"
+              >
+                <option value={4}>Roda 4 (empat) — Minibus, Sedan, SUV, Pick Up, MPV</option>
+                <option value={2}>Roda 2 (dua) — Sepeda Motor</option>
+                <option value={6}>Roda 6 (enam) — Bus Kampus, Truk Operasional</option>
+                <option value={3}>Roda 3 (tiga) — Kendaraan Roda Tiga / Viar</option>
+                <option value={10}>Roda 10 (sepuluh) — Truk Tronton / Alat Berat</option>
+              </select>
+              <p className="text-[11px] text-gray-600 mt-1.5 flex items-start gap-1.5 bg-blue-50/70 p-2 rounded-lg border border-blue-100">
+                <span className="text-blue-600">📝</span>
+                <span>Teks surat: <em>"Menerangkan bahwa kendaraan <strong>roda {jumlahRoda} ({jumlahRoda === 2 ? 'dua' : jumlahRoda === 6 ? 'enam' : jumlahRoda === 3 ? 'tiga' : jumlahRoda === 10 ? 'sepuluh' : 'empat'})</strong> dengan spesifikasi..."</em></span>
               </p>
             </div>
 

@@ -136,7 +136,7 @@ router.delete('/:id', async (req, res) => {
 // POST /api/v1/legalitas/cetak-surat - Generate Surat Rekomendasi & Kuasa SAMSAT PDF
 router.post('/cetak-surat', async (req, res) => {
   try {
-    const { vehicleId, nomorSurat, perihalSurat, pemberiKuasaId, penerimaKuasaId } = req.body;
+    const { vehicleId, nomorSurat, perihalSurat, pemberiKuasaId, penerimaKuasaId, jumlahRoda } = req.body;
 
     if (!vehicleId || !pemberiKuasaId || !penerimaKuasaId) {
       return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId, pemberiKuasaId, dan penerimaKuasaId wajib diisi." });
@@ -154,7 +154,8 @@ router.post('/cetak-surat', async (req, res) => {
         'no_rangka',
         'no_mesin',
         'warna',
-        'isi_silinder'
+        'isi_silinder',
+        'jumlah_roda'
       ]
     });
 
@@ -184,7 +185,10 @@ router.post('/cetak-surat', async (req, res) => {
       no_rangka: vehicleData.no_rangka && vehicleData.no_rangka.trim() ? vehicleData.no_rangka.trim() : '-',
       no_mesin: vehicleData.no_mesin && vehicleData.no_mesin.trim() ? vehicleData.no_mesin.trim() : '-',
       warna: vehicleData.warna && vehicleData.warna.trim() ? vehicleData.warna.trim() : '-',
-      isi_silinder: vehicleData.isi_silinder != null ? `${vehicleData.isi_silinder} cc` : '-'
+      isi_silinder: vehicleData.isi_silinder != null ? `${vehicleData.isi_silinder} cc` : '-',
+      jumlah_roda: (jumlahRoda !== undefined && jumlahRoda !== null && String(jumlahRoda).trim() !== '')
+        ? parseInt(jumlahRoda, 10)
+        : (vehicleData.jumlah_roda || null)
     };
 
     const sanitizedPemberi = {

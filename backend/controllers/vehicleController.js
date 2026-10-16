@@ -12,6 +12,7 @@ const sanitizeVehiclePayload = (body) => {
     model,
     warna,
     isi_silinder,
+    jumlah_roda,
     no_rangka,
     no_mesin,
     tgl_jatuh_tempo_pajak,
@@ -33,6 +34,10 @@ const sanitizeVehiclePayload = (body) => {
     no_rangka: no_rangka && String(no_rangka).trim() !== '' ? String(no_rangka).trim().toUpperCase() : null,
     no_mesin: no_mesin && String(no_mesin).trim() !== '' ? String(no_mesin).trim().toUpperCase() : null
   };
+
+  if (jumlah_roda !== undefined && jumlah_roda !== null && String(jumlah_roda).trim() !== '') {
+    sanitized.jumlah_roda = parseInt(jumlah_roda, 10);
+  }
 
   if (tgl_jatuh_tempo_pajak !== undefined) sanitized.tgl_jatuh_tempo_pajak = tgl_jatuh_tempo_pajak || null;
   if (tgl_jatuh_tempo_stnk !== undefined) sanitized.tgl_jatuh_tempo_stnk = tgl_jatuh_tempo_stnk || null;
@@ -168,6 +173,7 @@ const bulkImportVehicles = async (req, res) => {
       const isi_silinder = item.Isi_Silinder || item.isi_silinder;
       const no_rangka = item.No_Rangka || item.no_rangka;
       const no_mesin = item.No_Mesin || item.no_mesin;
+      const jumlah_roda = item.Jumlah_Roda || item.jumlah_roda || item.roda;
 
       return sanitizeVehiclePayload({
         nomor_polisi,
@@ -177,6 +183,7 @@ const bulkImportVehicles = async (req, res) => {
         model,
         warna,
         isi_silinder,
+        jumlah_roda,
         no_rangka,
         no_mesin
       });
@@ -189,18 +196,24 @@ const bulkImportVehicles = async (req, res) => {
       }
     }
 
+    const hasJumlahRoda = parsedData.some(row => row.jumlah_roda !== undefined && row.jumlah_roda !== null);
+    const updateCols = [
+      "merek_type",
+      "jenis_kendaraan",
+      "nama_sopir",
+      "model",
+      "warna",
+      "isi_silinder",
+      "no_rangka",
+      "no_mesin",
+      "updatedAt"
+    ];
+    if (hasJumlahRoda) {
+      updateCols.splice(6, 0, "jumlah_roda");
+    }
+
     await Vehicle.bulkCreate(parsedData, {
-      updateOnDuplicate: [
-        "merek_type",
-        "jenis_kendaraan",
-        "nama_sopir",
-        "model",
-        "warna",
-        "isi_silinder",
-        "no_rangka",
-        "no_mesin",
-        "updatedAt"
-      ]
+      updateOnDuplicate: updateCols
     });
 
     res.status(200).json({ message: "Data Kendaraan berhasil diimpor" });

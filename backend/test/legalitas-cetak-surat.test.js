@@ -155,3 +155,76 @@ test('pdfkitFontResolver successfully resolves missing font requests to local st
   const resolvedFont = require(simulatedPath);
   assert.equal(resolvedFont.name, 'Helvetica');
 });
+
+test('formatWheelDescription correctly maps wheel counts and falls back to smart inference', () => {
+  const { formatWheelDescription } = require('../services/samsatPdfGenerator');
+
+  // Explicit counts
+  assert.equal(formatWheelDescription(2), 'roda 2 (dua)');
+  assert.equal(formatWheelDescription('2'), 'roda 2 (dua)');
+  assert.equal(formatWheelDescription(3), 'roda 3 (tiga)');
+  assert.equal(formatWheelDescription(4), 'roda 4 (empat)');
+  assert.equal(formatWheelDescription(6), 'roda 6 (enam)');
+  assert.equal(formatWheelDescription(8), 'roda 8 (delapan)');
+  assert.equal(formatWheelDescription(10), 'roda 10 (sepuluh)');
+
+  // Fallback smart inference when null or undefined
+  assert.equal(formatWheelDescription(null, 'Sepeda Motor', 'Honda Beat'), 'roda 2 (dua)');
+  assert.equal(formatWheelDescription(null, 'Motor Roda Tiga', 'Viar'), 'roda 3 (tiga)');
+  assert.equal(formatWheelDescription(null, 'Bus Kampus', 'Hino Dutro'), 'roda 6 (enam)');
+  assert.equal(formatWheelDescription(null, 'Truk Tangki Air', 'Dyna'), 'roda 6 (enam)');
+  assert.equal(formatWheelDescription(null, 'MB PENUMPANG', 'MINIBUS'), 'roda 4 (empat)');
+  assert.equal(formatWheelDescription(null, 'Sedan', 'Toyota Camry'), 'roda 4 (empat)');
+});
+
+test('POST /legalitas/cetak-surat accepts explicit jumlahRoda parameter', async () => {
+  const mockVehicle = {
+    id: 'v-200',
+    nomor_polisi: 'DD 6789 BUS',
+    merek_type: 'Hino Bus',
+    jenis_kendaraan: 'Bus Besar',
+    model: 'Bus',
+    warna: 'Merah',
+    isi_silinder: 4000,
+    jumlah_roda: 6,
+    no_rangka: 'RANGKABUS1234',
+    no_mesin: 'MESINBUS1234'
+  };
+
+  const mockPemberi = {
+    id: 'p-1',
+    nama_lengkap: 'Baharuddin, S.S., M. Si.',
+    nip_nik: '197512172014091003',
+    jabatan: 'Kepala Subdit. Kerumahtanggaan dan Keprotokolan'
+  };
+
+  const mockPenerima = {
+    id: 'p-2',
+    nama_lengkap: 'Syaripuddin, S.E',
+    nip_nik: '198508272018015001',
+    jabatan: 'Tim Teknisi Otomotif'
+  };
+
+  mock.method(Vehicle, 'findOne', async () => mockVehicle);
+  mock.method(Vehicle, 'findByPk', async () => mockVehicle);
+  mock.method(Signatory, 'findByPk', async (id) => (id === 'p-1' ? mockPemberi : mockPenerima));
+  mock.method(SystemSetting, 'findAll', async () => []);
+
+  const res = await fetch(`${base}/legalitas/cetak-surat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      vehicleId: 'v-200',
+      pemberiKuasaId: 'p-1',
+      penerimaKuasaId: 'p-2',
+      nomorSurat: '65969/UN4.1.6.1.3/PL.10.04/2026',
+      perihalSurat: 'Pembayaran Pajak Tahunan dan Pergantian STNK',
+      jumlahRoda: 6
+    })
+  });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'application/pdf');
+  const arrayBuffer = await res.arrayBuffer();
+  assert.ok(arrayBuffer.byteLength > 1000);
+});
