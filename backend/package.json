@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test",
     "db:check": "node scripts/check-schema.js",
-    "db:prepare": "node scripts/prepare-schema.js"
+    "db:prepare": "node scripts/prepare-schema.js",
+    "postinstall": "node scripts/ensure-fonts.js"
   },
   "keywords": [],
   "author": "",

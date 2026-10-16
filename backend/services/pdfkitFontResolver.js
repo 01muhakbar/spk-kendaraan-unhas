@@ -10,9 +10,25 @@ const fs = require('fs');
 
 const localFontsDir = path.join(__dirname, '../fonts/standard-fonts');
 
-// Hook Module._resolveFilename untuk menangani kegagalan require standard font PDFKit
-const origResolveFilename = Module._resolveFilename;
+// 1. Hook Module._load untuk memotong request standard fonts secara langsung
+const origLoad = Module._load;
+Module._load = function (request, parent, isMain) {
+  if (
+    typeof request === 'string' &&
+    (request.includes('standard-fonts') || request.startsWith('#standard-fonts/'))
+  ) {
+    const fontBase = request.replace('#standard-fonts/', '').split(/[/\\]/).pop();
+    const fontFile = fontBase.endsWith('.cjs') ? fontBase : `${fontBase}.cjs`;
+    const localPath = path.join(localFontsDir, fontFile);
+    if (fs.existsSync(localPath)) {
+      return origLoad.call(this, localPath, parent, isMain);
+    }
+  }
+  return origLoad.call(this, request, parent, isMain);
+};
 
+// 2. Hook Module._resolveFilename untuk menangani jika resolver dipanggil terpisah
+const origResolveFilename = Module._resolveFilename;
 Module._resolveFilename = function (request, parent, isMain, options) {
   try {
     return origResolveFilename.call(this, request, parent, isMain, options);
@@ -32,7 +48,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
   }
 };
 
-// Static require hints untuk Vercel NFT (Node File Trace) agar font otomatis terikutsertakan
+// 3. Static require hints untuk Vercel NFT (Node File Trace)
 try {
   require('pdfkit/standard-fonts/Helvetica');
   require('pdfkit/standard-fonts/HelveticaBold');
