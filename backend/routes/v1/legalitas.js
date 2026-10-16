@@ -136,13 +136,13 @@ router.delete('/:id', async (req, res) => {
 // POST /api/v1/legalitas/cetak-surat - Generate Surat Rekomendasi & Kuasa SAMSAT PDF
 router.post('/cetak-surat', async (req, res) => {
   try {
-    const { vehicleId, nomorSurat, pemberiKuasaId, penerimaKuasaId } = req.body;
+    const { vehicleId, nomorSurat, perihalSurat, pemberiKuasaId, penerimaKuasaId } = req.body;
 
-    if (!vehicleId || !pemberiKuasaId) {
-      return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId dan pemberiKuasaId wajib diisi." });
+    if (!vehicleId || !pemberiKuasaId || !penerimaKuasaId) {
+      return res.status(400).json({ error: "Parameter tidak lengkap: vehicleId, pemberiKuasaId, dan penerimaKuasaId wajib diisi." });
     }
 
-    // Pembaruan Kueri Sequelize dengan atribut eksplisit
+    // Pembaruan Kueri Sequelize dengan atribut spesifikasi STNK eksplisit
     const vehicleData = await Vehicle.findOne({
       where: { id: vehicleId },
       attributes: [
@@ -167,9 +167,9 @@ router.post('/cetak-surat', async (req, res) => {
       return res.status(404).json({ error: "Data pejabat pemberi kuasa tidak ditemukan." });
     }
 
-    let penerimaKuasa = null;
-    if (penerimaKuasaId) {
-      penerimaKuasa = await Signatory.findByPk(penerimaKuasaId);
+    const penerimaKuasa = await Signatory.findByPk(penerimaKuasaId);
+    if (!penerimaKuasa) {
+      return res.status(404).json({ error: "Data staf penerima kuasa tidak ditemukan." });
     }
 
     // Penanganan Nilai Null (Fallback Data)
@@ -192,16 +192,18 @@ router.post('/cetak-surat', async (req, res) => {
       nama_lengkap: pemberiKuasa.nama_lengkap || '-',
       nip: pemberiKuasa.nip_nik || '-',
       nip_nik: pemberiKuasa.nip_nik || '-',
-      jabatan: pemberiKuasa.jabatan || 'Kepala Subdirektorat Kerumahtanggaan dan Keprotokolan'
+      jabatan: pemberiKuasa.jabatan || 'Kepala Subdirektorat Kerumahtanggaan dan Keprotokolan',
+      alamat: 'Jl. P. Kemerdekaan Km. 10 Makassar'
     };
 
-    const sanitizedPenerima = penerimaKuasa ? {
+    const sanitizedPenerima = {
       nama: penerimaKuasa.nama_lengkap || '-',
       nama_lengkap: penerimaKuasa.nama_lengkap || '-',
       nip: penerimaKuasa.nip_nik || '-',
       nip_nik: penerimaKuasa.nip_nik || '-',
-      jabatan: penerimaKuasa.jabatan || 'Staf Operasional'
-    } : null;
+      jabatan: penerimaKuasa.jabatan || 'Staf Operasional',
+      alamat: 'Jl. P. Kemerdekaan Km. 10 Makassar'
+    };
 
     // Ambil Pengaturan Kop & Logo
     const settings = await SystemSetting.findAll();
@@ -221,6 +223,7 @@ router.post('/cetak-surat', async (req, res) => {
       pemberiKuasa: sanitizedPemberi,
       penerimaKuasa: sanitizedPenerima,
       nomorSurat: nomorSurat || '65969/UN4.1.6.1.3/PL.10.04/2026',
+      perihalSurat: perihalSurat || 'Pembayaran Pajak Tahunan dan Pergantian STNK',
       kopSettings,
       logoUrl
     });

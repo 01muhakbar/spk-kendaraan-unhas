@@ -9,6 +9,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
   const defaultNomorSurat = `65969/UN4.1.6.1.3/PL.10.04/${currentYear}`;
 
   const [nomorSurat, setNomorSurat] = useState(defaultNomorSurat);
+  const [perihalSurat, setPerihalSurat] = useState('Pembayaran Pajak Tahunan dan Pergantian STNK');
   const [pemberiKuasaId, setPemberiKuasaId] = useState('');
   const [penerimaKuasaId, setPenerimaKuasaId] = useState('');
   const [signatoriesList, setSignatoriesList] = useState(initialSignatories);
@@ -28,6 +29,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setErrorMsg('');
       setSuccessMsg('');
       setNomorSurat(defaultNomorSurat);
+      setPerihalSurat('Pembayaran Pajak Tahunan dan Pergantian STNK');
 
       if (initialSignatories && initialSignatories.length > 0) {
         setSignatoriesList(initialSignatories);
@@ -65,7 +67,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setPemberiKuasaId(list[0].id);
     }
 
-    // Penerima Kuasa (Opsional): Prioritaskan TEKNISI atau staf operasional
+    // Penerima Kuasa (Staf Lapangan): Prioritaskan TEKNISI atau staf operasional
     const teknisi = list.find(s => 
       s.kategori_peran === 'TEKNISI' || 
       (s.jabatan && s.jabatan.toLowerCase().includes('teknisi')) ||
@@ -74,7 +76,9 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
     if (teknisi) {
       setPenerimaKuasaId(teknisi.id);
     } else if (list.length > 1) {
-      setPenerimaKuasaId(list[1].id);
+      // Pilih staf selain pemberi kuasa jika memungkinkan
+      const nonKasubdit = list.find(s => s.id !== (kasubdit ? kasubdit.id : list[0].id));
+      setPenerimaKuasaId(nonKasubdit ? nonKasubdit.id : list[1].id);
     }
   };
 
@@ -86,6 +90,16 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
     (s.jabatan && s.jabatan.toLowerCase().includes('kepala subdirektorat'))
   );
   const otherPemberiList = signatoriesList.filter(s => !kasubditList.includes(s));
+
+  // Daftar Staf Lapangan / Teknisi untuk Penerima Kuasa
+  const teknisiList = signatoriesList.filter(s => 
+    s.kategori_peran === 'TEKNISI' || 
+    (s.jabatan && s.jabatan.toLowerCase().includes('teknisi')) ||
+    (s.jabatan && s.jabatan.toLowerCase().includes('staf')) ||
+    (s.jabatan && s.jabatan.toLowerCase().includes('operasional')) ||
+    (s.jabatan && s.jabatan.toLowerCase().includes('pengemudi'))
+  );
+  const otherPenerimaList = signatoriesList.filter(s => !teknisiList.includes(s));
 
   const handleGeneratePdf = async (e) => {
     e.preventDefault();
@@ -100,8 +114,16 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       setErrorMsg('Nomor surat keluar wajib diisi.');
       return;
     }
+    if (!perihalSurat.trim()) {
+      setErrorMsg('Perihal surat wajib dipilih.');
+      return;
+    }
     if (!pemberiKuasaId) {
       setErrorMsg('Pemberi kuasa (Kepala Subdirektorat) wajib dipilih.');
+      return;
+    }
+    if (!penerimaKuasaId) {
+      setErrorMsg('Penerima kuasa (Staf Lapangan) wajib dipilih.');
       return;
     }
 
@@ -113,8 +135,9 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
       const payload = {
         vehicleId: vehicle.id,
         nomorSurat: nomorSurat.trim(),
+        perihalSurat: perihalSurat.trim(),
         pemberiKuasaId,
-        ...(penerimaKuasaId ? { penerimaKuasaId } : {})
+        penerimaKuasaId
       };
 
       const response = await axios.post(`${API}/legalitas/cetak-surat`, payload, {
@@ -259,10 +282,30 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
             </p>
           </div>
 
+          {/* Dropdown Perihal / Hal */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+              Perihal / Hal Surat <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={perihalSurat}
+              onChange={(e) => setPerihalSurat(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white"
+            >
+              <option value="Pembayaran Pajak Tahunan">Pembayaran Pajak Tahunan</option>
+              <option value="Pergantian STNK dan Plat 5 Tahunan">Pergantian STNK dan Plat 5 Tahunan</option>
+              <option value="Pembayaran Pajak Tahunan dan Pergantian STNK">Pembayaran Pajak Tahunan dan Pergantian STNK</option>
+            </select>
+            <p className="text-[11px] text-gray-500 mt-1">
+              Tujuan pengurusan berkas legalitas dan administrasi di kantor SAMSAT.
+            </p>
+          </div>
+
           {/* Dropdown Pemberi Kuasa (Penandatangan Surat) */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
-              Penandatangan Surat (Kepala Subdirektorat) <span className="text-red-500">*</span>
+              Pemberi Kuasa (Kepala Subdirektorat) <span className="text-red-500">*</span>
             </label>
             <select
               value={pemberiKuasaId}
@@ -271,7 +314,7 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
               disabled={loadingSignatories}
               className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
             >
-              <option value="">-- Pilih Pejabat Penandatangan --</option>
+              <option value="">-- Pilih Pejabat Pemberi Kuasa --</option>
               {kasubditList.length > 0 && (
                 <optgroup label="Kepala Subdirektorat (Direkomendasikan)">
                   {kasubditList.map(s => (
@@ -293,6 +336,43 @@ const ModalCetakSuratSamsat = ({ isOpen, onClose, vehicle, signatories: initialS
             </select>
             <p className="text-[11px] text-gray-500 mt-1">
               Pejabat yang bertindak menandatangani Surat Rekomendasi dan Kuasa di sisi kanan bawah dokumen.
+            </p>
+          </div>
+
+          {/* Dropdown Penerima Kuasa (Staf Lapangan) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">
+              Penerima Kuasa (Staf Lapangan) <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={penerimaKuasaId}
+              onChange={(e) => setPenerimaKuasaId(e.target.value)}
+              required
+              disabled={loadingSignatories}
+              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs bg-white disabled:bg-gray-100"
+            >
+              <option value="">-- Pilih Staf Lapangan Penerima Kuasa --</option>
+              {teknisiList.length > 0 && (
+                <optgroup label="Staf Lapangan / Teknisi Operasional (Direkomendasikan)">
+                  {teknisiList.map(s => (
+                    <option key={`penerima-${s.id}`} value={s.id}>
+                      {s.nama_lengkap} — {s.jabatan} (NIP: {s.nip_nik || '-'})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {otherPenerimaList.length > 0 && (
+                <optgroup label="Pegawai / Staf Lainnya">
+                  {otherPenerimaList.map(s => (
+                    <option key={`penerima-other-${s.id}`} value={s.id}>
+                      {s.nama_lengkap} — {s.jabatan} ({s.kategori_peran})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <p className="text-[11px] text-gray-500 mt-1">
+              Staf yang diberi kuasa membawa fisik kendaraan dinas dan berkas untuk pengurusan di SAMSAT.
             </p>
           </div>
 

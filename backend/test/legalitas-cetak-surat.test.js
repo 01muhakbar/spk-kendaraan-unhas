@@ -107,6 +107,7 @@ test('POST /legalitas/cetak-surat successfully returns PDF binary with correct h
       vehicleId: 'v-100',
       pemberiKuasaId: 'p-1',
       penerimaKuasaId: 'p-2',
+      perihalSurat: 'Pembayaran Pajak Tahunan Dan Pergantian STNK',
       nomorSurat: '65969/UN4.1.6.1.3/PL.10.04/2026'
     })
   });
@@ -121,6 +122,22 @@ test('POST /legalitas/cetak-surat successfully returns PDF binary with correct h
   // Verify PDF magic header bytes "%PDF"
   const header = Buffer.from(arrayBuffer.slice(0, 4)).toString('ascii');
   assert.equal(header, '%PDF');
+});
+
+test('POST /legalitas/cetak-surat returns 400 if penerimaKuasaId is missing', async () => {
+  const res = await fetch(`${base}/legalitas/cetak-surat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      vehicleId: 'v-100',
+      pemberiKuasaId: 'p-1',
+      nomorSurat: '65969/UN4.1.6.1.3/PL.10.04/2026'
+    })
+  });
+
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.match(data.error, /penerimaKuasaId wajib diisi/);
 });
 
 test('pdfkitFontResolver successfully resolves missing font requests to local standard-fonts', () => {
