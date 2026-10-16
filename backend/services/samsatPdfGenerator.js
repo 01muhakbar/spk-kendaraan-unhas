@@ -3,6 +3,7 @@ require('./pdfkitFontResolver');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const defaultLogoBase64 = require('./logoBase64');
 
 // Format tanggal ke Bahasa Indonesia (contoh: 16 Oktober 2026)
 const formatTanggalIndo = (date = new Date()) => {
@@ -14,7 +15,7 @@ const formatTanggalIndo = (date = new Date()) => {
   return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-// Ambil logo sebagai Buffer (Cloudinary / Base64 / File Lokal)
+// Ambil logo sebagai Buffer (Cloudinary / Base64 / File Lokal / Fallback Base64 Resmi)
 const getLogoBuffer = async (logoUrl) => {
   if (logoUrl && typeof logoUrl === 'string') {
     // 1. Dukungan format Base64 (data:image/...;base64,xxxx)
@@ -40,10 +41,15 @@ const getLogoBuffer = async (logoUrl) => {
     }
   }
 
-  // 3. Fallback ke logo lokal yang ada di public/logo-unhas.jpg
+  // 3. Dukungan File Lokal (jika tersedia di public/logo-unhas.jpg)
   const localLogoPath = path.join(__dirname, '../public/logo-unhas.jpg');
   if (fs.existsSync(localLogoPath)) {
     return fs.readFileSync(localLogoPath);
+  }
+
+  // 4. Tahap 4: Resolusi Gambar Base64 Permanen (Mencegah kegagalan render server-side)
+  if (defaultLogoBase64) {
+    return Buffer.from(defaultLogoBase64, 'base64');
   }
 
   return null;
@@ -89,17 +95,17 @@ const generateSamsatLetterPDF = async (data) => {
       const rightMargin = 555;
       const pageWidth = rightMargin - leftMargin; // 515 pt
 
-      // ─── TAHAP 1: KOP SURAT STANDAR UNHAS (3 BLOK SEJAJAR: 15% - 55% - 30%) ───
-      // CATATAN KHUSUS: Sesuai arahan manajerial, JANGAN menambahkan teks "BIRO UMUM". Pertahankan desain saat ini.
+      // ─── TAHAP 4: RESTRUKTURISASI KOP SURAT (TABEL 3 KOLOM: 15% - 55% - 30%) ───
+      // CATATAN KHUSUS: Pertahankan standar institusi (tidak ada teks BIRO UMUM).
       const headerTop = 25;
-      const logoWidth = 62;
+      const logoWidth = 65; // ~15% (~80px proporsional)
 
-      // Blok Kiri (15%): Logo UNHAS
+      // Kolom Kiri (15%): Logo UNHAS (Base64)
       if (logoBuffer) {
         doc.image(logoBuffer, leftMargin, headerTop, { width: logoWidth, fit: [logoWidth, 65] });
       }
 
-      // Blok Tengah (55%): Teks Institusi
+      // Kolom Tengah (55%): Teks Institusi
       const centerLeft = leftMargin + 72;
       const centerWidth = 285;
       doc.font('Times-Bold').fontSize(9.5).text(
@@ -110,12 +116,12 @@ const generateSamsatLetterPDF = async (data) => {
         kopSettings.KOP_KIRI_2 || 'DAN TEKNOLOGI',
         centerLeft, doc.y, { width: centerWidth, lineGap: 1.5 }
       );
-      doc.fontSize(13.5).text(
+      doc.fontSize(14).text(
         kopSettings.KOP_KIRI_3 || 'UNIVERSITAS HASANUDDIN',
         centerLeft, doc.y + 2, { width: centerWidth, lineGap: 1.5 }
       );
 
-      // Blok Kanan (30%): Alamat & Kontak (Rata Kanan)
+      // Kolom Kanan (30%): Alamat & Kontak (Rata Kanan)
       const rightLeft = 370;
       const rightWidth = rightMargin - rightLeft;
       doc.font('Times-Roman').fontSize(8);
@@ -133,11 +139,11 @@ const generateSamsatLetterPDF = async (data) => {
         currentRightY += 10;
       });
 
-      // Garis Pemisah (Solid Black di bawah kop surat)
+      // Garis Pemisah (3px Solid Black di bawah kop surat)
       const lineY = Math.max(doc.y, headerTop + 66) + 4;
-      doc.lineWidth(2.5).moveTo(leftMargin, lineY).lineTo(rightMargin, lineY).stroke('#000000');
+      doc.lineWidth(3).moveTo(leftMargin, lineY).lineTo(rightMargin, lineY).stroke('#000000');
 
-      // ─── TAHAP 2: JUDUL DOKUMEN & METADATA SURAT ───
+      // ─── JUDUL DOKUMEN & METADATA SURAT ───
       let yPos = lineY + 12;
 
       doc.font('Times-Bold').fontSize(11).text('SURAT REKOMENDASI DAN KUASA', leftMargin, yPos, {
@@ -179,7 +185,7 @@ const generateSamsatLetterPDF = async (data) => {
       const idCol2X = idCol1X + idCol1Width;
       const idCol3X = idCol2X + idCol2Width;
 
-      // ─── TAHAP 3: BLOK IDENTITAS LEGAL PEMBERI KUASA ───
+      // ─── TAHAP 1: TABEL IDENTITAS LEGAL PEMBERI KUASA (15% - 5% - 80%) ───
       yPos += 13;
       doc.font('Times-Roman').fontSize(9.5).text('Yang bertanda tangan dibawah ini:', leftMargin, yPos);
 
@@ -198,8 +204,8 @@ const generateSamsatLetterPDF = async (data) => {
         yPos += 12.5;
       });
 
-      // ─── BLOK IDENTITAS LEGAL PENERIMA KUASA ───
-      yPos += 3;
+      // ─── TAHAP 1: NORMALISASI TABEL IDENTITAS PENERIMA KUASA (15% - 5% - 80%) ───
+      yPos += 4;
       doc.font('Times-Roman').fontSize(9.5).text('Dengan ini memberi kuasa kepada:', leftMargin, yPos);
 
       yPos += 12;
@@ -217,8 +223,8 @@ const generateSamsatLetterPDF = async (data) => {
         yPos += 12.5;
       });
 
-      // ─── TAHAP 4: PENGANTAR & TABEL SPESIFIKASI KENDARAAN (25% - 5% - 70%) ───
-      yPos += 3;
+      // ─── TAHAP 2: INJEKSI KOLOM PEMISAH SPESIFIKASI KENDARAAN (20% - 5% - 75%) ───
+      yPos += 4;
       const wheelDesc = (vehicle.jenis_kendaraan && vehicle.jenis_kendaraan.toLowerCase().includes('motor'))
         ? 'roda 2 (dua)'
         : 'roda 4 (empat)';
@@ -229,9 +235,10 @@ const generateSamsatLetterPDF = async (data) => {
       );
 
       yPos += 12;
-      const specCol1Width = tableWidth * 0.25; // 25% (~123.75 pt)
+      // Proporsi Standar Tahap 2: 20% (label) - 5% (titik dua) - 75% (nilai)
+      const specCol1Width = tableWidth * 0.20; // 20% (~99 pt)
       const specCol2Width = tableWidth * 0.05; // 5% (~24.75 pt)
-      const specCol3Width = tableWidth * 0.70; // 70% (~346.5 pt)
+      const specCol3Width = tableWidth * 0.75; // 75% (~371.25 pt)
 
       const specCol1X = tableIndent;
       const specCol2X = specCol1X + specCol1Width;
@@ -255,7 +262,7 @@ const generateSamsatLetterPDF = async (data) => {
         yPos += 12;
       });
 
-      // ─── TAHAP 5: PARAGRAF PENUTUP ───
+      // ─── PARAGRAF PENUTUP ───
       yPos += 4;
       doc.font('Times-Roman').fontSize(9.5).text(
         'Adalah benar-benar milik Universitas Hasanuddin untuk diproses Surat Tanda Nomor Kendaraan (STNK) dan Buku Pemilikan Kendaraan Bermotor (BPKB).',
@@ -268,34 +275,34 @@ const generateSamsatLetterPDF = async (data) => {
         leftMargin, yPos, { width: pageWidth, lineGap: 1.5 }
       );
 
-      // ─── TAHAP 6: BLOK TANDA TANGAN (HANYA KASUBDIT DI SISI KANAN BAWAH) ───
-      // Sisi kanan bawah memuat tanda tangan Kepala Subdirektorat (Pemberi Kuasa)
-      yPos = doc.y + 14;
-      const signColLeft = leftMargin + (pageWidth * 0.58);
-      const signColWidth = pageWidth * 0.42;
+      // ─── TAHAP 3: EKSPANSI RUANG VERTIKAL (TABEL PENUTUP 50% - 50%: TEMBUSAN & TANDA TANGAN) ───
+      // Menggunakan satu tabel layouting besar: Kolom Kiri = Tembusan (bottom), Kolom Kanan = Tanda Tangan (top)
+      const closingTableTop = doc.y + 18;
+      const col50Width = pageWidth * 0.50; // 50% (~257.5 pt)
+      const leftColX = leftMargin; // Kolom Kiri
+      const rightColX = leftMargin + col50Width; // Kolom Kanan
 
+      // Kolom Kanan: Tanda Tangan Pejabat (Pemberi Kuasa)
       const dateText = `Makassar, ${formatTanggalIndo()}`;
-      doc.font('Times-Roman').fontSize(9.5).text(dateText, signColLeft, yPos, { width: signColWidth, align: 'left' });
+      doc.font('Times-Roman').fontSize(9.5).text(dateText, rightColX, closingTableTop, { width: col50Width, align: 'left' });
 
-      yPos += 12;
-      doc.text('Kepala Subdirektorat Kerumahtanggaan', signColLeft, yPos, { width: signColWidth, align: 'left' });
-      yPos += 11;
-      doc.text('dan Keprotokolan', signColLeft, yPos, { width: signColWidth, align: 'left' });
+      doc.text('Kepala Subdirektorat Kerumahtanggaan', rightColX, closingTableTop + 12, { width: col50Width, align: 'left' });
+      doc.text('dan Keprotokolan', rightColX, closingTableTop + 23, { width: col50Width, align: 'left' });
 
-      // Ruang tanda tangan
-      const signBaseY = yPos + 44;
+      // 4 baris kosong (br) mutlak diperlukan untuk ruang stempel basah instansi & tanda tangan fisik (~55 pt)
+      const stampVerticalWhitespace = 55;
+      const signBaseY = closingTableTop + 35 + stampVerticalWhitespace;
       const pemberiNama = pemberiKuasa.nama || pemberiKuasa.nama_lengkap || '___________________';
       const pemberiNip = pemberiKuasa.nip || pemberiKuasa.nip_nik || '-';
 
-      doc.font('Times-Bold').fontSize(9.5).text(pemberiNama, signColLeft, signBaseY, { width: signColWidth, align: 'left', underline: true });
-      doc.font('Times-Roman').fontSize(9).text(`NIP. ${pemberiNip}`, signColLeft, signBaseY + 12, { width: signColWidth, align: 'left' });
+      doc.font('Times-Bold').fontSize(9.5).text(pemberiNama, rightColX, signBaseY, { width: col50Width, align: 'left', underline: true });
+      doc.font('Times-Roman').fontSize(9).text(`NIP. ${pemberiNip}`, rightColX, signBaseY + 12, { width: col50Width, align: 'left' });
 
-      // ─── TAHAP 7: TEMBUSAN (KIRI BAWAH) ───
-      // Perbarui teks footer (Tembusan) di kiri bawah menjadi 2 butir sesuai spesifikasi
-      const tembusanY = yPos + 12;
-      doc.font('Times-Roman').fontSize(8.5).text('Tembusan:', leftMargin, tembusanY);
-      doc.text('1. Wakil Rektor Bidang Perencanaan, Keuangan, dan Prasarana.', leftMargin, tembusanY + 11);
-      doc.text('2. Direktur Komunikasi dan Kantor Sekretariat Rektor.', leftMargin, tembusanY + 22);
+      // Kolom Kiri: Tembusan (vertical-align: bottom, sejajar dengan bagian bawah tanda tangan)
+      const tembusanY = signBaseY - 26;
+      doc.font('Times-Roman').fontSize(8.5).text('Tembusan:', leftColX, tembusanY);
+      doc.text('1. Wakil Rektor Bidang Perencanaan, Keuangan, dan Prasarana.', leftColX, tembusanY + 11);
+      doc.text('2. Direktur Komunikasi dan Kantor Sekretariat Rektor.', leftColX, tembusanY + 22);
 
       doc.end();
     } catch (err) {
