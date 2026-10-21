@@ -116,15 +116,6 @@ const MasterDashboard = ({ onSettingsSaved }) => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'vehicles') {
-      const delayDebounceFn = setTimeout(() => {
-        fetchData('vehicles');
-      }, 500);
-      return () => clearTimeout(delayDebounceFn);
-    }
-  }, [vehicleSearchQuery]);
-
-  useEffect(() => {
     if (!logoFile) {
       setLogoPreview(savedLogoUrl);
       return;
@@ -145,7 +136,7 @@ const MasterDashboard = ({ onSettingsSaved }) => {
         if (request !== loadRequest.current) return;
         setSpks(res.data);
       } else if (tab === 'vehicles' || tab === 'legalitas') {
-        const res = await axios.get(`${API}/vehicles`, { params: { search: vehicleSearchQuery } });
+        const res = await axios.get(`${API}/vehicles`);
         if (request !== loadRequest.current) return;
         setVehicles(res.data);
       } else if (tab === 'signatories') {
@@ -933,12 +924,18 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                         placeholder="Cari No. SPK atau Plat..." 
                         className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchKeyword}
-                        onChange={(e) => setSearchKeyword(e.target.value)}
+                        onChange={(e) => {
+                          setSearchKeyword(e.target.value);
+                          setSpkPage(1);
+                        }}
                       />
                       <select 
                         className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
+                        onChange={(e) => {
+                          setFilterStatus(e.target.value);
+                          setSpkPage(1);
+                        }}
                       >
                         <option value="">Semua Status</option>
                         {uniqueStatuses.map(status => (
@@ -1054,20 +1051,56 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
             {/* TAB: VEHICLES */}
             {activeTab === 'vehicles' && (() => {
-              const totalVehiclePages = Math.ceil(vehicles.length / ROWS_PER_PAGE);
-              const currentVehicles = vehicles.slice((vehiclePage - 1) * ROWS_PER_PAGE, vehiclePage * ROWS_PER_PAGE);
+              const query = (vehicleSearchQuery || '').trim().toLowerCase();
+              const filteredVehicles = vehicles.filter(v => {
+                if (!query) return true;
+                return (
+                  (v.nomor_polisi || '').toLowerCase().includes(query) ||
+                  (v.merek_type || '').toLowerCase().includes(query) ||
+                  (v.jenis_kendaraan || '').toLowerCase().includes(query) ||
+                  (v.nama_sopir || '').toLowerCase().includes(query) ||
+                  (v.model || '').toLowerCase().includes(query) ||
+                  (v.warna || '').toLowerCase().includes(query) ||
+                  (v.no_rangka || '').toLowerCase().includes(query) ||
+                  (v.no_mesin || '').toLowerCase().includes(query)
+                );
+              });
+
+              const totalVehiclePages = Math.ceil(filteredVehicles.length / ROWS_PER_PAGE);
+              const currentVehicles = filteredVehicles.slice((vehiclePage - 1) * ROWS_PER_PAGE, vehiclePage * ROWS_PER_PAGE);
               return (
               <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                     <h2 className="text-xl font-bold">Data Kendaraan Dinas</h2>
-                    <input
-                      type="text"
-                      placeholder="Cari Nopol, Merek, Sopir, No. Rangka, No. Mesin..."
-                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={vehicleSearchQuery}
-                      onChange={(e) => setVehicleSearchQuery(e.target.value)}
-                    />
+                    <div className="relative w-full sm:w-80">
+                      <input
+                        type="text"
+                        placeholder="Cari Nopol, Merek, Sopir, No. Rangka, No. Mesin..."
+                        className="border border-gray-300 rounded-lg pl-9 pr-8 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={vehicleSearchQuery}
+                        onChange={(e) => {
+                          setVehicleSearchQuery(e.target.value);
+                          setVehiclePage(1);
+                        }}
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                        🔍
+                      </span>
+                      {vehicleSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVehicleSearchQuery('');
+                            setVehiclePage(1);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-100 transition-colors"
+                          title="Hapus pencarian"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2 items-center w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
                     <button onClick={downloadVehicleTemplate} className="text-blue-600 hover:text-blue-800 text-xs font-semibold underline px-2">Template CSV</button>
@@ -1090,28 +1123,58 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentVehicles.map(v => (
-                        <tr key={v.id} className="border-b hover:bg-gray-50">
-                          <td className="p-3 font-bold uppercase">{v.nomor_polisi}</td>
-                          <td className="p-3 capitalize">{v.merek_type?.toLowerCase()}</td>
-                          <td className="p-3 hidden md:table-cell capitalize">{v.jenis_kendaraan?.toLowerCase()}</td>
-                          <td className="p-3 capitalize">{v.nama_sopir?.toLowerCase()}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                              v.status_legalitas === 'AKTIF' ? 'bg-green-100 text-green-700' :
-                              v.status_legalitas === 'WARNING' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {v.status_legalitas === 'WARNING' ? 'Pajak < 30 Hari' : (v.status_legalitas || 'AKTIF')}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center space-x-3 whitespace-nowrap">
-                            <button onClick={() => { setSelectedVehicleDetail(v); setShowDetailDrawer(true); }} className="text-gray-600 hover:text-blue-600 transition-colors p-1 hover:bg-blue-50 rounded" title="Detail Legalitas (STNK)">👁️</button>
-                            <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors p-1 hover:bg-green-50 rounded" title="Edit">✏️</button>
-                            <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded" title="Hapus">🗑️</button>
+                      {currentVehicles.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="p-8 text-center text-gray-500">
+                            {vehicleSearchQuery ? (
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <span className="text-2xl">🔍</span>
+                                <p className="font-medium text-gray-700">
+                                  Tidak ada kendaraan yang cocok dengan &quot;{vehicleSearchQuery}&quot;
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  Coba periksa kata kunci Nomor Polisi, Merek, Sopir, No. Rangka, atau No. Mesin.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVehicleSearchQuery('');
+                                    setVehiclePage(1);
+                                  }}
+                                  className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  Reset Pencarian
+                                </button>
+                              </div>
+                            ) : (
+                              <p>Belum ada data kendaraan dinas.</p>
+                            )}
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        currentVehicles.map(v => (
+                          <tr key={v.id} className="border-b hover:bg-gray-50">
+                            <td className="p-3 font-bold uppercase">{v.nomor_polisi}</td>
+                            <td className="p-3 capitalize">{v.merek_type?.toLowerCase()}</td>
+                            <td className="p-3 hidden md:table-cell capitalize">{v.jenis_kendaraan?.toLowerCase()}</td>
+                            <td className="p-3 capitalize">{v.nama_sopir?.toLowerCase()}</td>
+                            <td className="p-3">
+                              <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                                v.status_legalitas === 'AKTIF' ? 'bg-green-100 text-green-700' :
+                                v.status_legalitas === 'WARNING' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {v.status_legalitas === 'WARNING' ? 'Pajak < 30 Hari' : (v.status_legalitas || 'AKTIF')}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center space-x-3 whitespace-nowrap">
+                              <button onClick={() => { setSelectedVehicleDetail(v); setShowDetailDrawer(true); }} className="text-gray-600 hover:text-blue-600 transition-colors p-1 hover:bg-blue-50 rounded" title="Detail Legalitas (STNK)">👁️</button>
+                              <button onClick={() => openModal('vehicle', v)} className="text-gray-600 hover:text-green-600 transition-colors p-1 hover:bg-green-50 rounded" title="Edit">✏️</button>
+                              <button onClick={() => handleDeleteVehicle(v.id)} className="text-gray-600 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded" title="Hapus">🗑️</button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1120,7 +1183,12 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 {totalVehiclePages > 1 && (
                   <div className="flex justify-between items-center px-4 py-3 border-t bg-white sm:px-6 mt-2">
                     <div className="text-sm text-gray-700">
-                      Menampilkan <span className="font-medium">{(vehiclePage - 1) * ROWS_PER_PAGE + 1}</span> hingga <span className="font-medium">{Math.min(vehiclePage * ROWS_PER_PAGE, vehicles.length)}</span> dari <span className="font-medium">{vehicles.length}</span> hasil
+                      Menampilkan <span className="font-medium">{(vehiclePage - 1) * ROWS_PER_PAGE + 1}</span> hingga <span className="font-medium">{Math.min(vehiclePage * ROWS_PER_PAGE, filteredVehicles.length)}</span> dari <span className="font-medium">{filteredVehicles.length}</span> hasil
+                      {vehicleSearchQuery && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          (difilter dari total {vehicles.length} kendaraan)
+                        </span>
+                      )}
                     </div>
                     <div className="flex space-x-2">
                       <button 
