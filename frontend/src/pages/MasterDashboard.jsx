@@ -1678,14 +1678,14 @@ const MasterDashboard = ({ onSettingsSaved }) => {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1 text-gray-600">
-                    Nama Sopir / Pengguna
+                    Pengguna / Nama Sopir
                   </label>
                   <input
                     type="text"
                     className={`${inputClass} mb-0`}
                     value={vehicleForm.nama_sopir || ''}
                     onChange={e => setVehicleForm({...vehicleForm, nama_sopir: e.target.value})}
-                    placeholder="Nama Lengkap Sopir / Pengguna Dinas"
+                    placeholder="Nama Lengkap Pengguna / Sopir Dinas"
                   />
                 </div>
               </div>

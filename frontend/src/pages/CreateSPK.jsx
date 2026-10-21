@@ -346,7 +346,7 @@ const CreateSPK = () => {
               <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.jenis_kendaraan?.toLowerCase() || '—'} />
             </div>
             <div className="md:col-span-2">
-              <label className={labelClass}>Nama Sopir / Pengguna <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
+              <label className={labelClass}>Pengguna / Nama Sopir <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
               <input type="text" readOnly className={`${readonlyClass} capitalize`} value={selectedKendaraan?.nama_sopir?.toLowerCase() || '—'} />
             </div>
             
