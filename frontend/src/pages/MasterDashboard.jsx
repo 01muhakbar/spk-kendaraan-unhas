@@ -944,6 +944,70 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                       </select>
                     </div>
                   </div>
+
+                  {/* Contextual Bulk Action Bar */}
+                  {selectedSpkIds.length > 0 && (
+                    <div className="sticky top-2 z-30 bg-blue-50/95 backdrop-blur-md border border-blue-200 rounded-xl p-3 mb-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all duration-200">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-xs">
+                          {selectedSpkIds.length}
+                        </span>
+                        <span className="font-semibold text-sm text-blue-900">
+                          SPK Terpilih
+                        </span>
+                        {selectedSpkIds.length < filteredSpks.length ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSpkIds(filteredSpks.map(s => s.id))}
+                            className="text-xs text-blue-700 hover:text-blue-900 font-medium underline transition-colors"
+                          >
+                            Pilih semua {filteredSpks.length} SPK
+                          </button>
+                        ) : (
+                          <span className="text-xs text-blue-700 font-medium">
+                            (Semua {filteredSpks.length} SPK terpilih)
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleBulkDeleteSPK}
+                          disabled={isDownloading || loading}
+                          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all disabled:opacity-50"
+                        >
+                          <span>🗑️</span> Hapus ({selectedSpkIds.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleBulkDownload}
+                          disabled={isDownloading || loading}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                              <span>Memproses {downloadProgress.current}/{downloadProgress.total}...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>📥</span> Unduh ZIP ({selectedSpkIds.length})
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSpkIds([])}
+                          disabled={isDownloading}
+                          className="text-gray-500 hover:text-gray-700 hover:bg-blue-100/60 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                          title="Batalkan pilihan"
+                        >
+                          ✕ Batal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-gray-600">
                       <thead className="bg-gray-50 text-gray-700 border-b">
@@ -1963,41 +2027,6 @@ const MasterDashboard = ({ onSettingsSaved }) => {
                 <button type="submit" className={btnClass}>Simpan</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Action Bar untuk Bulk Download */}
-      {selectedSpkIds.length > 0 && activeTab === 'spk' && (
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center space-x-6 z-50 border border-blue-500 transition-all duration-300">
-          <div className="flex items-center space-x-2">
-            <span className="bg-white text-blue-600 font-bold w-6 h-6 rounded-full flex items-center justify-center text-sm">
-              {selectedSpkIds.length}
-            </span>
-            <span className="font-medium text-sm md:text-base">SPK Terpilih</span>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={handleBulkDeleteSPK} 
-              disabled={isDownloading || loading}
-              className="bg-red-50 text-red-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-red-100 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm border border-red-200"
-            >
-              🗑️ Hapus
-            </button>
-            <button 
-              onClick={handleBulkDownload} 
-              disabled={isDownloading || loading}
-              className="bg-white text-blue-600 px-5 py-2 rounded-full font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-80 flex items-center gap-2 shadow-sm"
-            >
-              {isDownloading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  Memproses {downloadProgress.current}/{downloadProgress.total}...
-                </>
-              ) : (
-                <>📥 Unduh ZIP</>
-              )}
-            </button>
           </div>
         </div>
       )}
