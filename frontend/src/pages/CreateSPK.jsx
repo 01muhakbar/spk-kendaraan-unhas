@@ -269,7 +269,6 @@ const CreateSPK = () => {
     }
   };
 
-  const direktur = signatories.find(s => s.kategori_peran === 'DIREKTUR');
   const kasubdit = signatories.find(s => s.kategori_peran === 'KASUBDIT');
 
   const inputClass = "w-full p-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors";
@@ -468,9 +467,7 @@ const CreateSPK = () => {
             <div>
               <label className={labelClass}>Penandatangan Kolom "Disetujui" <span className="text-xs font-normal text-blue-500">(Auto)</span></label>
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 space-y-1">
-                <p className="font-semibold">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
-                <p className="text-xs">{direktur?.jabatan || 'Direktur Komunikasi / Sekretariat Rektor'}</p>
-                <p className="font-semibold mt-1">{kasubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+                <p className="font-semibold">{kasubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
                 <p className="text-xs">{kasubdit?.jabatan || 'Kepala Subdit. Kerumahtanggaan dan Keprotokolan'}</p>
               </div>
             </div>

@@ -207,7 +207,6 @@ const PrintSPK = ({ onReady }) => {
   const kasiTU       = pejabat.find(p => p.kategori_peran === 'KASI_TU');
   const teknisi1     = pejabat.filter(p => p.kategori_peran === 'TEKNISI')[0];
   const teknisi2     = pejabat.filter(p => p.kategori_peran === 'TEKNISI')[1];
-  const direktur     = pejabat.find(p => p.kategori_peran === 'DIREKTUR');
   const kepalaSubdit = pejabat.find(p => p.kategori_peran === 'KASUBDIT');
 
   const { vehicle: kendaraan, vendor } = spk;
@@ -435,7 +434,7 @@ const PrintSPK = ({ onReady }) => {
                 <div className="w-6 pb-1">1.</div>
                 <div className="w-56">
                   <p className="font-bold">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
-                  <p>NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
+                  <p>NIP. {teknisi1?.nip_nik || '7371123008640002'}</p>
                 </div>
                 <div className="ml-4 pb-1">(…… …………………………)</div>
               </div>
@@ -494,24 +493,15 @@ const PrintSPK = ({ onReady }) => {
             {replaceVars(lembarSettings?.LEMBAR4_PENUTUP) || 'Demikian surat permintaan ini disampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.'}
           </p>
 
-          <div className="mt-12 pt-6 mb-4 break-inside-avoid">
-            <p className="mb-1 text-center">Makassar, {formatDate(spk.tanggalPersetujuan)}</p>
-            <p className="font-semibold mb-3 text-center">Disetujui:</p>
-            <div className="grid grid-cols-2 gap-8 mt-2">
-              <div className="text-center">
-                <p className="text-sm">Direktur Komunikasi /</p>
-                <p className="text-sm">Sekretariat Rektor,</p>
-                <div style={{ height: '70px' }}></div>
-                <p className="font-bold text-sm">{direktur?.nama_lengkap || 'Dr. Sawedi Muhammad, S.Sos., M.Sc'}</p>
-                <p className="text-sm">NIP. {direktur?.nip_nik || '197109082022043001'}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm">Kepala Subdit. Kerumahtanggaan</p>
-                <p className="text-sm">dan Keprotokolan,</p>
-                <div style={{ height: '70px' }}></div>
-                <p className="font-bold text-sm">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
-                <p className="text-sm">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
-              </div>
+          <div className="mt-12 pt-6 mb-4 flex justify-end break-inside-avoid">
+            <div className="text-center" style={{ minWidth: '260px' }}>
+              <p className="mb-1 text-sm">Makassar, {formatDate(spk.tanggalPersetujuan)}</p>
+              <p className="font-semibold mb-3 text-sm">Disetujui:</p>
+              <p className="text-sm">Kepala Subdit. Kerumahtanggaan</p>
+              <p className="text-sm">dan Keprotokolan,</p>
+              <div style={{ height: '70px' }}></div>
+              <p className="font-bold text-sm">{kepalaSubdit?.nama_lengkap || 'Baharuddin, S.S., M. Si.'}</p>
+              <p className="text-sm">NIP. {kepalaSubdit?.nip_nik || '197512172014091003'}</p>
             </div>
           </div>
         </div>
@@ -605,7 +595,7 @@ const PrintSPK = ({ onReady }) => {
                   <div className="flex items-end gap-2">
                     <div className="w-48">
                       <p className="font-bold text-sm">{teknisi1?.nama_lengkap || 'Arifuddin, ST'}</p>
-                      <p className="text-sm">NIK. {teknisi1?.nip_nik || '7371123008640002'}</p>
+                      <p className="text-sm">NIP. {teknisi1?.nip_nik || '7371123008640002'}</p>
                     </div>
                     <div className="text-sm pb-1">(……………………)</div>
                   </div>
