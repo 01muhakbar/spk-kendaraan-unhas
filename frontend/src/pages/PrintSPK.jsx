@@ -493,7 +493,7 @@ const PrintSPK = ({ onReady }) => {
             {replaceVars(lembarSettings?.LEMBAR4_PENUTUP) || 'Demikian surat permintaan ini disampaikan, atas perhatian dan kerja samanya diucapkan terima kasih.'}
           </p>
 
-          <div className="mt-12 pt-6 mb-4 flex justify-end break-inside-avoid">
+          <div className="mt-12 pt-6 mb-4 flex justify-center break-inside-avoid">
             <div className="text-center" style={{ minWidth: '260px' }}>
               <p className="mb-1 text-sm">Makassar, {formatDate(spk.tanggalPersetujuan)}</p>
               <p className="font-semibold mb-3 text-sm">Disetujui:</p>
